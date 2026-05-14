@@ -1,7 +1,6 @@
-// frontend/src/App.jsx
+    // frontend/src/App.jsx
 // ═══════════════════════════════════════════════════════════
 //  DataRemédiation — Espace Client (version connectée au backend)
-//  Remplace les appels directs à Anthropic par l'API sécurisée
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -57,19 +56,16 @@ export default function App() {
   const [activeFile, setActiveFile] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
 
-  // Restaurer la session depuis le refresh token stocké
   useEffect(() => {
     restoreSession().then(u => {
       if (u) { setUser(u); setScreen('dashboard'); }
       else    setScreen('login');
     });
-    // Écouter l'événement de déconnexion forcée (token expiré)
     const handler = () => { setUser(null); setFiles([]); setScreen('login'); };
     window.addEventListener('auth:logout', handler);
     return () => window.removeEventListener('auth:logout', handler);
   }, []);
 
-  // Polling des fichiers en cours d'analyse
   useEffect(() => {
     if (screen !== 'dashboard' || !user) return;
     loadFiles();
@@ -84,7 +80,6 @@ export default function App() {
     try {
       const f = await listFiles();
       setFiles(f || []);
-      // Mettre à jour activeFile si il est en cours
       setActiveFile(prev => prev ? (f.find(x=>x.id===prev.id)||prev) : null);
     } catch(e) { console.error('loadFiles:', e.message); }
   }, [user]);
@@ -266,7 +261,6 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-      {/* Header */}
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
@@ -283,7 +277,6 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
       </header>
 
       <div style={{flex:1,padding:'28px',maxWidth:1100,margin:'0 auto',width:'100%'}}>
-        {/* Stats */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}} className="fadeUp">
           {[
             {label:'Fichiers',      value:stats.total,      color:P.blue,   icon:'◈'},
@@ -301,7 +294,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           ))}
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:activeFile?'1fr 380px':'1fr',gap:16}}>
+        <div style={{display:'grid',gridTemplateColumns:activeFile?'1fr 400px':'1fr',gap:16}}>
           <div>
             {showUpload ? (
               <UploadZone
@@ -452,7 +445,9 @@ function FileRow({ file, isActive, onClick, onDelete }) {
         </div>
       )}
       {file.status==='error' && file.error_message && (
-        <div style={{marginTop:8,fontSize:10,color:P.danger,paddingTop:8,borderTop:`1px solid ${P.border}`}}>✗ {file.error_message}</div>
+        <div style={{marginTop:8,fontSize:10,color:P.danger,paddingTop:8,borderTop:`1px solid ${P.border}`,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+          ✗ Analyse échouée — cliquez pour voir le rapport
+        </div>
       )}
     </div>
   );
@@ -461,3 +456,237 @@ function FileRow({ file, isActive, onClick, onDelete }) {
 // ═══════════════════════════════════════════════════════════
 // REPORT PANEL
 // ═══════════════════════════════════════════════════════════
+function ReportPanel({ file, onClose }) {
+  const [dlLinks, setDlLinks] = useState({});
+  const [loading, setLoading] = useState('');
+  const [error,   setError]   = useState('');
+  const [search,  setSearch]  = useState('');
+  const [filter,  setFilter]  = useState('all');
+
+  const getLink = async (type) => {
+    setLoading(type); setError('');
+    try {
+      const data = await getDownloadLink(file.id, type);
+      setDlLinks(p => ({ ...p, [type]: data }));
+      window.open(buildDownloadUrl(data.downloadUrl), '_blank');
+    } catch(e) { setError(e.message); }
+    setLoading('');
+  };
+
+  // Parsing robuste du summary
+  const parseSummary = () => {
+    try {
+      if (!file.summary && !file.error_message) return {};
+      // Cas où le summary est dans error_message (bug backend)
+      const raw = file.summary || file.error_message || '';
+      if (typeof raw === 'object') return raw;
+      const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      // Nettoyer les préfixes comme "Réponse IA invalide ou vide : "
+      const jsonStart = str.indexOf('{');
+      if (jsonStart === -1) return {};
+      return JSON.parse(str.slice(jsonStart));
+    } catch(e) { return {}; }
+  };
+
+  const summary = parseSummary();
+  const results = summary.results || [];
+  const isDone = file.status === 'done' || results.length > 0;
+
+  const counts = {
+    all:      results.length,
+    conforme: results.filter(r => (r.statut||'').includes('Conforme')).length,
+    corriger: results.filter(r => (r.statut||'').includes('corriger')).length,
+    bloquant: results.filter(r => (r.statut||'').includes('Bloquant')).length,
+  };
+
+  const filtered = results.filter(r => {
+    const matchFilter =
+      filter === 'all' ||
+      (filter === 'conforme' && (r.statut||'').includes('Conforme')) ||
+      (filter === 'corriger' && (r.statut||'').includes('corriger')) ||
+      (filter === 'bloquant' && (r.statut||'').includes('Bloquant'));
+    const q = search.toLowerCase();
+    const matchSearch = !q ||
+      (r.alias||'').toLowerCase().includes(q) ||
+      (r.denomination||'').toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+
+  const getTag = (statut='') => {
+    if (statut.includes('Conforme')) return { bg:`${P.accent}15`, color:P.accent, border:`${P.accent}30`, icon:'✓', label:'Conforme' };
+    if (statut.includes('corriger')) return { bg:`${P.warn}15`,   color:P.warn,   border:`${P.warn}30`,   icon:'⚠', label:'À corriger' };
+    return                                  { bg:`${P.danger}15`, color:P.danger, border:`${P.danger}30`, icon:'✗', label:'Bloquant' };
+  };
+
+  return (
+    <div className="fadeUp card" style={{padding:20,position:'sticky',top:80,maxHeight:'calc(100vh - 100px)',overflowY:'auto'}}>
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport détaillé</div>
+        <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>✕</button>
+      </div>
+
+      {/* Infos fichier */}
+      <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
+        <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
+        <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
+        {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Terminé {fmtDate(file.completed_at)}</div>}
+      </div>
+
+      {!isDone ? (
+        <div style={{textAlign:'center',padding:'32px 0'}}>
+          {file.status==='error' ? (
+            <><div style={{fontSize:28,marginBottom:8,color:P.danger}}>✗</div>
+            <div style={{color:P.danger,fontSize:12}}>Analyse échouée</div>
+            <div style={{fontSize:10,color:P.muted,marginTop:8}}>Réessayez en important un nouveau fichier</div></>
+          ) : (
+            <><div className="spin" style={{fontSize:28,marginBottom:8,color:P.warn}}>◎</div>
+            <div style={{color:P.warn,fontSize:12}}>Analyse en cours…</div>
+            <div style={{fontSize:10,color:P.muted,marginTop:4}}>Pseudo · Validation · IA Claude</div></>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Métriques */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+            {[
+              ['Total',      counts.all,                                            P.blue],
+              ['Taux',       `${summary.taux !== undefined ? summary.taux : file.taux_conformite || 0}%`, P.accent],
+              ['À corriger', counts.corriger,                                       P.warn],
+              ['Bloquants',  counts.bloquant,                                       P.danger],
+            ].map(([l,v,c],i)=>(
+              <div key={i} style={{background:P.surface,border:`1px solid ${c}20`,borderRadius:8,padding:'10px 12px'}}>
+                <div style={{fontSize:9,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em'}}>{l}</div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:c,marginTop:3}}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tableau détaillé */}
+          {results.length > 0 && (
+            <div style={{marginBottom:16}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
+                Détail par fournisseur
+                <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:8}}>({results.length})</span>
+              </div>
+
+              {/* Recherche */}
+              <input
+                style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
+                placeholder="Rechercher alias ou dénomination…"
+                value={search}
+                onChange={e=>setSearch(e.target.value)}
+              />
+
+              {/* Filtres */}
+              <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
+                {[
+                  ['all',      `Tous (${counts.all})`,                P.chrome],
+                  ['conforme', `✓ Conformes (${counts.conforme})`,    P.accent],
+                  ['corriger', `⚠ Corriger (${counts.corriger})`,     P.warn],
+                  ['bloquant', `✗ Bloquants (${counts.bloquant})`,    P.danger],
+                ].map(([key,label,color])=>(
+                  <button key={key} onClick={()=>setFilter(key)} style={{
+                    background: filter===key ? `${color}15` : 'transparent',
+                    border: `1px solid ${filter===key ? color+'50' : P.border}`,
+                    color: filter===key ? color : P.muted,
+                    padding:'3px 9px',borderRadius:4,fontSize:10,cursor:'pointer',
+                    fontFamily:"'JetBrains Mono',monospace",transition:'all .15s'
+                  }}>{label}</button>
+                ))}
+              </div>
+
+              {/* Lignes fournisseurs */}
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {filtered.length === 0 ? (
+                  <div style={{textAlign:'center',padding:'20px 0',color:P.muted,fontSize:11}}>Aucun résultat</div>
+                ) : filtered.map((r,i) => {
+                  const tag = getTag(r.statut||'');
+                  return (
+                    <div key={i} style={{background:P.surface,border:`1px solid ${tag.border}`,borderRadius:8,padding:'10px 12px',borderLeft:`3px solid ${tag.color}`}}>
+                      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:6}}>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.alias}</div>
+                          {r.denomination && <div style={{fontSize:10,color:P.muted,marginTop:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.denomination}</div>}
+                        </div>
+                        <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',flexShrink:0}}>
+                          {tag.icon} {tag.label}
+                        </span>
+                      </div>
+
+                      {/* Indicateurs SIRET / TVA / SIREN */}
+                      <div style={{display:'flex',gap:10,marginBottom:4}}>
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>
+                          {r.siret_ok?'✓':'✗'} SIRET
+                        </span>
+                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>
+                          {r.tva_ok?'✓':'✗'} TVA
+                        </span>
+                        {r.siren_coherent === false && (
+                          <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>
+                        )}
+                      </div>
+
+                      {/* Erreurs */}
+                      {(r.erreurs||[]).map((e,j)=>(
+                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>✗ {e}</div>
+                      ))}
+
+                      {/* Suggestion */}
+                      {r.suggestion && (
+                        <div style={{fontSize:10,color:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
+                          → {r.suggestion}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Téléchargements */}
+          <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14}}>
+            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
+            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {results.length > 0 && (
+                <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+                  {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
+                  <div style={{flex:1,textAlign:'left'}}>
+                    <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
+                    <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>CSV · Données nettoyées · Lien 15 min</div>
+                  </div>
+                </button>
+              )}
+              <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+                {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
+                <div style={{flex:1,textAlign:'left'}}>
+                  <div style={{fontWeight:600}}>Rapport complet</div>
+                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
+                </div>
+              </button>
+            </div>
+            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════════════
+function EmptyState({ onUpload }) {
+  return (
+    <div className="card fadeUp" style={{padding:'60px 40px',textAlign:'center',borderStyle:'dashed'}}>
+      <div style={{fontSize:48,marginBottom:16,color:P.dim}}>⊙</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,marginBottom:8}}>Aucun fichier importé</div>
+      <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>Importez vos fichiers fournisseurs pour démarrer<br/>un audit de conformité e-Invoicing 2026.</div>
+      <button className="btn-primary" onClick={onUpload}>+ Importer un premier fichier</button>
+    </div>
+  );
+}
+
+    
