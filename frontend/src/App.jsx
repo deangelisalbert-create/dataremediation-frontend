@@ -461,7 +461,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
             )}
           </div>
           {activeFile && !showUpload && (
-            <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} />
+            <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} userPlan={user?.plan || 'basic'} />
           )}
         </div>
       </div>
