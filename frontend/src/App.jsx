@@ -1,7 +1,4 @@
     // frontend/src/App.jsx
-// ═══════════════════════════════════════════════════════════
-//  DataRemédiation — Espace Client (version connectée au backend)
-// ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   register, login, logout,
@@ -46,9 +43,6 @@ const STATUS_CFG = {
   error:     { label:'Erreur',     color:'#ff4566', icon:'✗', pulse:false },
 };
 
-// ═══════════════════════════════════════════════════════════
-// APP ROOT
-// ═══════════════════════════════════════════════════════════
 export default function App() {
   const [screen, setScreen] = useState('loading');
   const [user,   setUser]   = useState(null);
@@ -118,9 +112,6 @@ export default function App() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// SHELL
-// ═══════════════════════════════════════════════════════════
 function Shell({ children }) {
   return (
     <div style={{minHeight:'100vh',background:P.bg,color:P.text,fontFamily:"'JetBrains Mono','Fira Code',monospace",fontSize:13}}>
@@ -169,9 +160,6 @@ function LoadingScreen() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// AUTH SCREEN
-// ═══════════════════════════════════════════════════════════
 function AuthScreen({ mode, onSuccess, onSwitch }) {
   const [form, setForm]       = useState({company:'',email:'',password:'',confirm:''});
   const [loading, setLoading] = useState(false);
@@ -248,9 +236,6 @@ function AuthScreen({ mode, onSuccess, onSwitch }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════════
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
   const stats = {
     total:      files.length,
@@ -336,9 +321,6 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// UPLOAD ZONE
-// ═══════════════════════════════════════════════════════════
 function UploadZone({ onDone, onCancel }) {
   const [dragging, setDragging] = useState(false);
   const [file,     setFile]     = useState(null);
@@ -412,9 +394,6 @@ function UploadZone({ onDone, onCancel }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// FILE ROW
-// ═══════════════════════════════════════════════════════════
 function FileRow({ file, isActive, onClick, onDelete }) {
   const st = STATUS_CFG[file.status] || STATUS_CFG.importing;
   const ext = '.'+file.original_name.split('.').pop().toLowerCase();
@@ -453,11 +432,7 @@ function FileRow({ file, isActive, onClick, onDelete }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// REPORT PANEL
-// ═══════════════════════════════════════════════════════════
 function ReportPanel({ file, onClose }) {
-  const [dlLinks, setDlLinks] = useState({});
   const [loading, setLoading] = useState('');
   const [error,   setError]   = useState('');
   const [search,  setSearch]  = useState('');
@@ -467,32 +442,27 @@ function ReportPanel({ file, onClose }) {
     setLoading(type); setError('');
     try {
       const data = await getDownloadLink(file.id, type);
-      setDlLinks(p => ({ ...p, [type]: data }));
       window.open(buildDownloadUrl(data.downloadUrl), '_blank');
     } catch(e) { setError(e.message); }
     setLoading('');
   };
 
-  // Parsing robuste du summary
   const parseSummary = () => {
     try {
-      if (!file.summary && !file.error_message) return {};
-      // Cas où le summary est dans error_message (bug backend)
       const raw = file.summary || file.error_message || '';
+      if (!raw) return {};
       if (typeof raw === 'object') return raw;
-      const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
-      // Nettoyer les préfixes comme "Réponse IA invalide ou vide : "
+      const str = String(raw);
       const jsonStart = str.indexOf('{');
       if (jsonStart === -1) return {};
       return JSON.parse(str.slice(jsonStart));
     } catch(e) { return {}; }
   };
 
-const matchSearch = !q ||
-  (r.alias||'').toLowerCase().includes(q) ||
-  (r.nom_reel||'').toLowerCase().includes(q) ||
-  (r.denomination||'').toLowerCase().includes(q);
-  const isDone = file.status === 'done' || results.length > 0;
+  const data    = parseSummary();
+  const results = data.results || [];
+  const summary = data.summary || {};
+  const isDone  = file.status === 'done' || results.length > 0;
 
   const counts = {
     all:      results.length,
@@ -509,9 +479,8 @@ const matchSearch = !q ||
       (filter === 'bloquant' && (r.statut||'').includes('Bloquant'));
     const q = search.toLowerCase();
     const matchSearch = !q ||
-  (r.alias||'').toLowerCase().includes(q) ||
-  (r.denomination||'').toLowerCase().includes(q) ||
-  (r.nom_reel||'').toLowerCase().includes(q);
+      (r.alias||'').toLowerCase().includes(q) ||
+      (r.nom_reel||'').toLowerCase().includes(q);
     return matchFilter && matchSearch;
   });
 
@@ -523,13 +492,11 @@ const matchSearch = !q ||
 
   return (
     <div className="fadeUp card" style={{padding:20,position:'sticky',top:80,maxHeight:'calc(100vh - 100px)',overflowY:'auto'}}>
-      {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport détaillé</div>
         <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>✕</button>
       </div>
 
-      {/* Infos fichier */}
       <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
         <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
         <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
@@ -550,13 +517,12 @@ const matchSearch = !q ||
         </div>
       ) : (
         <>
-          {/* Métriques */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
             {[
-              ['Total',      counts.all,                                            P.blue],
+              ['Total',      counts.all,         P.blue],
               ['Taux',       `${summary.taux !== undefined ? summary.taux : file.taux_conformite || 0}%`, P.accent],
-              ['À corriger', counts.corriger,                                       P.warn],
-              ['Bloquants',  counts.bloquant,                                       P.danger],
+              ['À corriger', counts.corriger,    P.warn],
+              ['Bloquants',  counts.bloquant,    P.danger],
             ].map(([l,v,c],i)=>(
               <div key={i} style={{background:P.surface,border:`1px solid ${c}20`,borderRadius:8,padding:'10px 12px'}}>
                 <div style={{fontSize:9,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em'}}>{l}</div>
@@ -565,7 +531,6 @@ const matchSearch = !q ||
             ))}
           </div>
 
-          {/* Tableau détaillé */}
           {results.length > 0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
@@ -573,21 +538,19 @@ const matchSearch = !q ||
                 <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:8}}>({results.length})</span>
               </div>
 
-              {/* Recherche */}
               <input
                 style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
-                placeholder="Rechercher alias ou dénomination…"
+                placeholder="Rechercher nom ou alias…"
                 value={search}
                 onChange={e=>setSearch(e.target.value)}
               />
 
-              {/* Filtres */}
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
-                  ['all',      `Tous (${counts.all})`,                P.chrome],
-                  ['conforme', `✓ Conformes (${counts.conforme})`,    P.accent],
-                  ['corriger', `⚠ Corriger (${counts.corriger})`,     P.warn],
-                  ['bloquant', `✗ Bloquants (${counts.bloquant})`,    P.danger],
+                  ['all',      `Tous (${counts.all})`,             P.chrome],
+                  ['conforme', `✓ Conformes (${counts.conforme})`, P.accent],
+                  ['corriger', `⚠ Corriger (${counts.corriger})`,  P.warn],
+                  ['bloquant', `✗ Bloquants (${counts.bloquant})`, P.danger],
                 ].map(([key,label,color])=>(
                   <button key={key} onClick={()=>setFilter(key)} style={{
                     background: filter===key ? `${color}15` : 'transparent',
@@ -599,7 +562,6 @@ const matchSearch = !q ||
                 ))}
               </div>
 
-              {/* Lignes fournisseurs */}
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
                 {filtered.length === 0 ? (
                   <div style={{textAlign:'center',padding:'20px 0',color:P.muted,fontSize:11}}>Aucun résultat</div>
@@ -609,34 +571,24 @@ const matchSearch = !q ||
                     <div key={i} style={{background:P.surface,border:`1px solid ${tag.border}`,borderRadius:8,padding:'10px 12px',borderLeft:`3px solid ${tag.color}`}}>
                       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:6}}>
                         <div style={{minWidth:0}}>
-                          <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.alias}</div>
-                          <div style={{fontSize:10,color:'#8899cc',marginTop:1}}>{r.nom_reel}</div>
-                          {r.denomination && <div style={{fontSize:10,color:P.muted,marginTop:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.denomination}</div>}
+                          <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.nom_reel || r.alias}</div>
+                          <div style={{fontSize:10,color:P.muted,marginTop:1}}>{r.alias}</div>
                         </div>
                         <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',flexShrink:0}}>
                           {tag.icon} {tag.label}
                         </span>
                       </div>
 
-                      {/* Indicateurs SIRET / TVA / SIREN */}
                       <div style={{display:'flex',gap:10,marginBottom:4}}>
-                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>
-                          {r.siret_ok?'✓':'✗'} SIRET
-                        </span>
-                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>
-                          {r.tva_ok?'✓':'✗'} TVA
-                        </span>
-                        {r.siren_coherent === false && (
-                          <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>
-                        )}
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'✗'} SIRET</span>
+                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'✗'} TVA</span>
+                        {r.siren_coherent === false && <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>}
                       </div>
 
-                      {/* Erreurs */}
                       {(r.erreurs||[]).map((e,j)=>(
                         <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>✗ {e}</div>
                       ))}
 
-                      {/* Suggestion */}
                       {r.suggestion && (
                         <div style={{fontSize:10,color:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
                           → {r.suggestion}
@@ -649,7 +601,6 @@ const matchSearch = !q ||
             </div>
           )}
 
-          {/* Téléchargements */}
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
@@ -679,9 +630,6 @@ const matchSearch = !q ||
   );
 }
 
-// ═══════════════════════════════════════════════════════════
-// EMPTY STATE
-// ═══════════════════════════════════════════════════════════
 function EmptyState({ onUpload }) {
   return (
     <div className="card fadeUp" style={{padding:'60px 40px',textAlign:'center',borderStyle:'dashed'}}>
