@@ -5,7 +5,7 @@
 //  La clé API Claude n'est PLUS dans le frontend.
 // ═══════════════════════════════════════════════════════════
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 // ── Gestion des tokens en mémoire (pas de localStorage pour les access tokens)
 let _accessToken  = null;
