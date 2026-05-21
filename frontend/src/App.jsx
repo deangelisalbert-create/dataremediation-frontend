@@ -607,6 +607,9 @@ function ReportPanel({ file, onClose }) {
                       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:6}}>
                         <div style={{minWidth:0}}>
                           <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.alias}</div>
+{r.nom_reel && r.nom_reel !== r.alias && (
+  <div style={{fontSize:10,color:P.chrome,marginTop:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.nom_reel}</div>
+)}
                           {r.denomination && <div style={{fontSize:10,color:P.muted,marginTop:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.denomination}</div>}
                         </div>
                         <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',flexShrink:0}}>
