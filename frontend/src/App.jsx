@@ -507,8 +507,9 @@ function ReportPanel({ file, onClose }) {
       (filter === 'bloquant' && (r.statut||'').includes('Bloquant'));
     const q = search.toLowerCase();
     const matchSearch = !q ||
-      (r.alias||'').toLowerCase().includes(q) ||
-      (r.denomination||'').toLowerCase().includes(q);
+  (r.alias||'').toLowerCase().includes(q) ||
+  (r.denomination||'').toLowerCase().includes(q) ||
+  (r.nom_reel||'').toLowerCase().includes(q);
     return matchFilter && matchSearch;
   });
 
