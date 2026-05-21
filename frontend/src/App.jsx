@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   register, login, logout,
-  listFiles, uploadFile, getFileStatus, deleteFile,
+  listFiles, uploadFile, deleteFile,
   getDownloadLink, buildDownloadUrl, restoreSession,
 } from './api';
 
@@ -17,6 +17,8 @@ const P = {
   blue:'#3d8eff',warn:'#ffb340',danger:'#ff4566',
   text:'#c8d4ee',muted:'#4a5878',dim:'#2a3450',chrome:'#8899cc',
 };
+
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 function fmtSize(b){ return b>1048576?`${(b/1048576).toFixed(1)} Mo`:`${(b/1024).toFixed(0)} Ko`; }
 function fmtDate(ts){ return new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
@@ -50,7 +52,14 @@ export default function App() {
   const [activeFile, setActiveFile] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
 
+  // Vérifier si on est sur /reset-password
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resetToken = params.get('token');
+    if (resetToken) {
+      setScreen('reset-password');
+      return;
+    }
     restoreSession().then(u => {
       if (u) { setUser(u); setScreen('dashboard'); }
       else    setScreen('login');
@@ -98,7 +107,17 @@ export default function App() {
           mode={screen}
           onSuccess={handleLogin}
           onSwitch={() => setScreen(screen==='login'?'register':'login')}
+          onForgot={() => setScreen('forgot-password')}
         />
+      )}
+      {screen === 'forgot-password' && (
+        <ForgotPasswordScreen onBack={() => setScreen('login')} />
+      )}
+      {screen === 'reset-password' && (
+        <ResetPasswordScreen onSuccess={() => {
+          window.history.replaceState({}, '', '/');
+          setScreen('login');
+        }} />
       )}
       {screen === 'dashboard' && (
         <Dashboard
@@ -160,7 +179,7 @@ function LoadingScreen() {
   );
 }
 
-function AuthScreen({ mode, onSuccess, onSwitch }) {
+function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
   const [form, setForm]       = useState({company:'',email:'',password:'',confirm:''});
   const [loading, setLoading] = useState(false);
   const [err, setErr]         = useState('');
@@ -206,7 +225,14 @@ function AuthScreen({ mode, onSuccess, onSwitch }) {
             <input className="field" type="email" placeholder="vous@entreprise.fr" value={form.email} onChange={e=>f('email',e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
           </div>
           <div>
-            <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Mot de passe</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+              <div style={{fontSize:10,color:P.muted,letterSpacing:'.06em',textTransform:'uppercase'}}>Mot de passe</div>
+              {mode==='login' && (
+                <button onClick={onForgot} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,textDecoration:'underline'}}>
+                  Mot de passe oublié ?
+                </button>
+              )}
+            </div>
             <input className="field" type="password" placeholder="••••••••" value={form.password} onChange={e=>f('password',e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
           </div>
           {mode==='register' && (
@@ -231,6 +257,128 @@ function AuthScreen({ mode, onSuccess, onSwitch }) {
             <div key={b} style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:4,padding:'3px 8px',fontSize:9,color:P.dim,letterSpacing:'.06em'}}>{b}</div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ForgotPasswordScreen({ onBack }) {
+  const [email,   setEmail]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent,    setSent]    = useState(false);
+  const [err,     setErr]     = useState('');
+
+  const submit = async () => {
+    if (!email) return setErr('Email requis');
+    setLoading(true); setErr('');
+    try {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error('Erreur serveur');
+      setSent(true);
+    } catch(e) { setErr(e.message); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
+      <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px'}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontSize:36,marginBottom:12}}>🔑</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Mot de passe oublié</div>
+          <div style={{fontSize:11,color:P.muted,marginTop:6}}>Entrez votre email pour recevoir un lien de réinitialisation</div>
+        </div>
+
+        {sent ? (
+          <div style={{textAlign:'center'}}>
+            <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px',marginBottom:20}}>
+              <div style={{fontSize:24,marginBottom:8}}>✉️</div>
+              <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>Email envoyé !</div>
+              <div style={{fontSize:11,color:P.muted}}>Vérifiez votre boîte mail et cliquez sur le lien de réinitialisation.</div>
+            </div>
+            <button className="btn-ghost" onClick={onBack} style={{width:'100%'}}>← Retour à la connexion</button>
+          </div>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div>
+              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Email</div>
+              <input className="field" type="email" placeholder="vous@entreprise.fr" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
+            </div>
+            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>⚠ {err}</div>}
+            <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
+              {loading ? <span className="spin">⟳</span> : '→ Envoyer le lien'}
+            </button>
+            <button className="btn-ghost" onClick={onBack} style={{textAlign:'center'}}>← Retour</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordScreen({ onSuccess }) {
+  const [password, setPassword] = useState('');
+  const [confirm,  setConfirm]  = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [err,      setErr]      = useState('');
+  const [done,     setDone]     = useState(false);
+
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  const submit = async () => {
+    if (password.length < 8) return setErr('Mot de passe trop court (8 caractères min)');
+    if (password !== confirm) return setErr('Les mots de passe ne correspondent pas');
+    setLoading(true); setErr('');
+    try {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+      setDone(true);
+      setTimeout(onSuccess, 2000);
+    } catch(e) { setErr(e.message); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
+      <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px'}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontSize:36,marginBottom:12}}>🔒</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Nouveau mot de passe</div>
+          <div style={{fontSize:11,color:P.muted,marginTop:6}}>Choisissez un nouveau mot de passe sécurisé</div>
+        </div>
+
+        {done ? (
+          <div style={{textAlign:'center'}}>
+            <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px'}}>
+              <div style={{fontSize:24,marginBottom:8}}>✅</div>
+              <div style={{color:P.accent,fontWeight:600}}>Mot de passe mis à jour !</div>
+              <div style={{fontSize:11,color:P.muted,marginTop:4}}>Redirection en cours…</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div>
+              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Nouveau mot de passe</div>
+              <input className="field" type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
+            </div>
+            <div>
+              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Confirmer</div>
+              <input className="field" type="password" placeholder="••••••••" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
+            </div>
+            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>⚠ {err}</div>}
+            <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
+              {loading ? <span className="spin">⟳</span> : '→ Réinitialiser'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -519,10 +667,10 @@ function ReportPanel({ file, onClose }) {
         <>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
             {[
-              ['Total',      counts.all,         P.blue],
+              ['Total',      counts.all,      P.blue],
               ['Taux',       `${summary.taux !== undefined ? summary.taux : file.taux_conformite || 0}%`, P.accent],
-              ['À corriger', counts.corriger,    P.warn],
-              ['Bloquants',  counts.bloquant,    P.danger],
+              ['À corriger', counts.corriger, P.warn],
+              ['Bloquants',  counts.bloquant, P.danger],
             ].map(([l,v,c],i)=>(
               <div key={i} style={{background:P.surface,border:`1px solid ${c}20`,borderRadius:8,padding:'10px 12px'}}>
                 <div style={{fontSize:9,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em'}}>{l}</div>
@@ -580,7 +728,7 @@ function ReportPanel({ file, onClose }) {
                       </div>
 
                       <div style={{display:'flex',gap:10,marginBottom:4}}>
-                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'✗'} SIRET</span>
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'✗'} SIRET/SIREN</span>
                         <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'✗'} TVA</span>
                         {r.siren_coherent === false && <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>}
                       </div>
@@ -590,7 +738,7 @@ function ReportPanel({ file, onClose }) {
                       ))}
 
                       {r.suggestion && (
-                        <div style={{fontSize:10,color:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
+                        <div style={{fontSize:10,color:r.statut?.includes('Conforme')?P.accent:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
                           → {r.suggestion}
                         </div>
                       )}
