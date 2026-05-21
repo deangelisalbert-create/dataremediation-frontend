@@ -580,7 +580,7 @@ function FileRow({ file, isActive, onClick, onDelete }) {
   );
 }
 
-function ReportPanel({ file, onClose }) {
+function ReportPanel({ file, onClose, userPlan }) {
   const [loading, setLoading] = useState('');
   const [error,   setError]   = useState('');
   const [search,  setSearch]  = useState('');
