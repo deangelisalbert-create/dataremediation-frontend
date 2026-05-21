@@ -488,8 +488,10 @@ function ReportPanel({ file, onClose }) {
     } catch(e) { return {}; }
   };
 
-  const summary = parseSummary();
-  const results = summary.results || [];
+const matchSearch = !q ||
+  (r.alias||'').toLowerCase().includes(q) ||
+  (r.nom_reel||'').toLowerCase().includes(q) ||
+  (r.denomination||'').toLowerCase().includes(q);
   const isDone = file.status === 'done' || results.length > 0;
 
   const counts = {
