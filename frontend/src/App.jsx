@@ -12,6 +12,11 @@ const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
 
+// ─── Emails admin — bypass paiement pour démos ────────────────────────────────
+const ADMIN_EMAILS = [
+  'deangelisalbert@gmail.com',
+];
+
 const P = {
   bg:'#06080f',surface:'#0b0e18',card:'#0f1220',
   border:'#161c2e',borderHi:'#1e2a42',
@@ -430,7 +435,6 @@ function AbonnementsPanel({ user, onClose }) {
           </div>
           <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>✕ Fermer</button>
         </div>
-
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginTop:24}}>
           {ABONNEMENTS.map((a, i) => (
             <div key={i} className="card" style={{padding:20,border:`1px solid ${a.color}30`,display:'flex',flexDirection:'column',gap:12}}>
@@ -443,7 +447,6 @@ function AbonnementsPanel({ user, onClose }) {
                   {a.prix}
                 </div>
               </div>
-
               <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
                 {a.features.map((feat, j) => (
                   <div key={j} style={{display:'flex',alignItems:'center',gap:6,fontSize:10,color:P.chrome}}>
@@ -451,26 +454,16 @@ function AbonnementsPanel({ user, onClose }) {
                   </div>
                 ))}
               </div>
-
               <button
                 onClick={() => {
                   const url = `${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`;
                   window.location.href = url;
                 }}
                 style={{
-                  width:'100%',
-                  background: a.color,
-                  color: '#000',
-                  fontWeight: 700,
-                  padding: '10px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  letterSpacing: '.06em',
-                  textTransform: 'uppercase',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  marginTop: 4,
+                  width:'100%',background:a.color,color:'#000',fontWeight:700,
+                  padding:'10px',borderRadius:'6px',fontSize:'11px',
+                  letterSpacing:'.06em',textTransform:'uppercase',border:'none',
+                  cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4,
                 }}
               >
                 → S'abonner
@@ -478,7 +471,6 @@ function AbonnementsPanel({ user, onClose }) {
             </div>
           ))}
         </div>
-
         <div style={{marginTop:20,fontSize:10,color:P.dim,textAlign:'center'}}>
           🔐 Paiement sécurisé Stripe · Résiliation possible à tout moment · Facture PDF automatique
         </div>
@@ -489,6 +481,7 @@ function AbonnementsPanel({ user, onClose }) {
 
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
   const [showAbonnements, setShowAbonnements] = useState(false);
+  const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
   const stats = {
     total:      files.length,
@@ -506,7 +499,10 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemédiation</div>
-            <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>Espace client · {user.company}</div>
+            <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>
+              Espace client · {user.company}
+              {isAdmin && <span style={{marginLeft:8,color:P.accent}}>· ADMIN</span>}
+            </div>
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -545,6 +541,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
             {showUpload ? (
               <UploadZone
                 user={user}
+                isAdmin={isAdmin}
                 onDone={async () => { setShowUpload(false); await onReload(); }}
                 onCancel={() => setShowUpload(false)}
               />
@@ -583,8 +580,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// ─── UploadZone avec PaymentButton + blocage import + détection xlsx ──────────
-function UploadZone({ onDone, onCancel, user }) {
+// ─── UploadZone avec admin bypass ─────────────────────────────────────────────
+function UploadZone({ onDone, onCancel, user, isAdmin }) {
   const [dragging,       setDragging]       = useState(false);
   const [file,           setFile]           = useState(null);
   const [errs,           setErrs]           = useState([]);
@@ -645,8 +642,10 @@ function UploadZone({ onDone, onCancel, user }) {
     }
   };
 
+  const canUpload = paid || isAdmin;
+
   const upload = async () => {
-    if (!file || !paid) return;
+    if (!file || !canUpload) return;
     setUploading(true); setError('');
     try {
       await uploadFile(file, setProgress);
@@ -660,7 +659,14 @@ function UploadZone({ onDone, onCancel, user }) {
   return (
     <div className="fadeUp card" style={{padding:24,marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
+          {isAdmin && (
+            <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>
+              MODE DÉMO
+            </span>
+          )}
+        </div>
         <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>✕ Annuler</button>
       </div>
 
@@ -707,11 +713,13 @@ function UploadZone({ onDone, onCancel, user }) {
 
       {file && errs.length === 0 && !uploading && !detecting && (
         <div style={{marginTop:16}}>
-          {paid ? (
+          {canUpload ? (
             <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-              <span style={{fontSize:18}}>✅</span>
+              <span style={{fontSize:18}}>{isAdmin ? '🔑' : '✅'}</span>
               <div>
-                <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>Paiement confirmé</div>
+                <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>
+                  {isAdmin ? 'Accès démo — paiement bypassed' : 'Paiement confirmé'}
+                </div>
                 <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
               </div>
             </div>
@@ -739,21 +747,21 @@ function UploadZone({ onDone, onCancel, user }) {
       <button
         className="btn-primary"
         onClick={upload}
-        disabled={!file || errs.length > 0 || uploading || !paid || detecting}
-        style={{marginTop:10,width:'100%',opacity:(!paid && file && !detecting) ? 0.35 : 1}}
+        disabled={!file || errs.length > 0 || uploading || !canUpload || detecting}
+        style={{marginTop:10,width:'100%',opacity:(!canUpload && file && !detecting) ? 0.35 : 1}}
       >
         {uploading ? (
           <><span className="spin">⟳</span> Upload en cours…</>
         ) : detecting ? (
           '⟳ Analyse du fichier…'
-        ) : !paid && file ? (
+        ) : !canUpload && file ? (
           '🔒 Paiement requis avant l\'import'
         ) : (
           '↑ Importer et analyser'
         )}
       </button>
 
-      {!paid && file && !detecting && (
+      {!canUpload && file && !detecting && (
         <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
           Effectuez le paiement ci-dessus pour débloquer l'import
         </div>
