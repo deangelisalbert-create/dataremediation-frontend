@@ -470,20 +470,57 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// ─── UploadZone avec PaymentButton intégré ────────────────────────────────────
+// Remplace uniquement la fonction UploadZone dans App.jsx
+
+// ─── UploadZone avec PaymentButton + blocage import ──────────────────────────
 function UploadZone({ onDone, onCancel, user }) {
-  const [dragging, setDragging] = useState(false);
-  const [file,     setFile]     = useState(null);
-  const [errs,     setErrs]     = useState([]);
-  const [progress, setProgress] = useState(0);
-  const [uploading,setUploading]= useState(false);
-  const [error,    setError]    = useState('');
+  const [dragging,    setDragging]    = useState(false);
+  const [file,        setFile]        = useState(null);
+  const [errs,        setErrs]        = useState([]);
+  const [progress,    setProgress]    = useState(0);
+  const [uploading,   setUploading]   = useState(false);
+  const [error,       setError]       = useState('');
+  const [nbFournisseurs, setNbFournisseurs] = useState(0);
+  const [paid,        setPaid]        = useState(false);
   const inputRef = useRef();
 
-  const handle = (f) => { const e=valFile(f); setErrs(e); setFile(e.length?null:f); };
+  // Vérifier si retour depuis Stripe avec ?paid=true
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paid') === 'true') {
+      setPaid(true);
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const handle = (f) => {
+    const e = valFile(f);
+    setErrs(e);
+    setFile(e.length ? null : f);
+    if (!e.length) detectFournisseurs(f);
+  };
+
+  // Détection approximative du nombre de lignes (= fournisseurs)
+  const detectFournisseurs = (f) => {
+    const ext = '.' + f.name.split('.').pop().toLowerCase();
+    if (ext === '.csv') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const lines = e.target.result.split('\n').filter(l => l.trim()).length;
+        // On soustrait 1 pour l'en-tête
+        setNbFournisseurs(Math.max(0, lines - 1));
+      };
+      reader.readAsText(f);
+    } else {
+      // Pour xlsx/xls/pdf : estimation par taille (1 Ko ≈ 3 fournisseurs)
+      const estimate = Math.round(f.size / 1024 * 3);
+      setNbFournisseurs(Math.max(1, estimate));
+    }
+  };
 
   const upload = async () => {
-    if (!file) return;
+    if (!file || !paid) return;
     setUploading(true); setError('');
     try {
       await uploadFile(file, setProgress);
@@ -500,6 +537,7 @@ function UploadZone({ onDone, onCancel, user }) {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
         <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>✕ Annuler</button>
       </div>
+
       <div
         className={dragging?'drop-active':''}
         onClick={()=>inputRef.current?.click()}
@@ -512,7 +550,7 @@ function UploadZone({ onDone, onCancel, user }) {
         {file ? (
           <><div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
           <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
-          <div style={{fontSize:11,color:P.muted}}>{fmtSize(file.size)}</div></>
+          <div style={{fontSize:11,color:P.muted}}>{fmtSize(file.size)}{nbFournisseurs > 0 && ` · ~${nbFournisseurs} fournisseurs détectés`}</div></>
         ) : (
           <><div style={{fontSize:36,marginBottom:10,color:P.dim}}>⊕</div>
           <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-déposer ou cliquer</div>
@@ -538,19 +576,52 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
-      {/* ── Bouton Stripe — visible uniquement quand un fichier valide est sélectionné ── */}
+      {/* Paiement ou confirmation */}
       {file && errs.length === 0 && !uploading && (
         <div style={{marginTop:16}}>
-          <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
-            Étape 1 — Payer pour activer le traitement
-          </div>
-          <PaymentButton userEmail={user?.email} fileName={file.name} />
+          {paid ? (
+            <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+              <span style={{fontSize:18}}>✅</span>
+              <div>
+                <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>Paiement confirmé</div>
+                <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
+                Étape 1 — Payer pour activer le traitement
+              </div>
+              <PaymentButton
+                userEmail={user?.email}
+                fileName={file.name}
+                nbFournisseurs={nbFournisseurs}
+              />
+            </>
+          )}
         </div>
       )}
 
-      <button className="btn-primary" onClick={upload} disabled={!file||errs.length>0||uploading} style={{marginTop:10,width:'100%'}}>
-        {uploading ? <><span className="spin">⟳</span> Upload en cours…</> : '↑ Importer et analyser'}
+      <button
+        className="btn-primary"
+        onClick={upload}
+        disabled={!file || errs.length > 0 || uploading || !paid}
+        style={{marginTop:10,width:'100%',opacity:(!paid && file) ? 0.35 : 1}}
+      >
+        {uploading ? (
+          <><span className="spin">⟳</span> Upload en cours…</>
+        ) : !paid && file ? (
+          '🔒 Paiement requis avant l\'import'
+        ) : (
+          '↑ Importer et analyser'
+        )}
       </button>
+
+      {!paid && file && (
+        <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
+          Effectuez le paiement ci-dessus pour débloquer l'import
+        </div>
+      )}
     </div>
   );
 }
