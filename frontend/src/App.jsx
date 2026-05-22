@@ -5,6 +5,7 @@ import {
   listFiles, uploadFile, deleteFile,
   getDownloadLink, buildDownloadUrl, restoreSession,
 } from './api';
+import { PaymentButton } from './components/PaymentButton';
 
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -52,7 +53,6 @@ export default function App() {
   const [activeFile, setActiveFile] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
 
-  // Vérifier si on est sur /reset-password
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const resetToken = params.get('token');
@@ -431,6 +431,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           <div>
             {showUpload ? (
               <UploadZone
+                user={user}
                 onDone={async () => { setShowUpload(false); await onReload(); }}
                 onCancel={() => setShowUpload(false)}
               />
@@ -469,7 +470,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-function UploadZone({ onDone, onCancel }) {
+// ─── UploadZone avec PaymentButton intégré ────────────────────────────────────
+function UploadZone({ onDone, onCancel, user }) {
   const [dragging, setDragging] = useState(false);
   const [file,     setFile]     = useState(null);
   const [errs,     setErrs]     = useState([]);
@@ -535,7 +537,18 @@ function UploadZone({ onDone, onCancel }) {
           </div>
         </div>
       )}
-      <button className="btn-primary" onClick={upload} disabled={!file||errs.length>0||uploading} style={{marginTop:16,width:'100%'}}>
+
+      {/* ── Bouton Stripe — visible uniquement quand un fichier valide est sélectionné ── */}
+      {file && errs.length === 0 && !uploading && (
+        <div style={{marginTop:16}}>
+          <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
+            Étape 1 — Payer pour activer le traitement
+          </div>
+          <PaymentButton userEmail={user?.email} fileName={file.name} />
+        </div>
+      )}
+
+      <button className="btn-primary" onClick={upload} disabled={!file||errs.length>0||uploading} style={{marginTop:10,width:'100%'}}>
         {uploading ? <><span className="spin">⟳</span> Upload en cours…</> : '↑ Importer et analyser'}
       </button>
     </div>
