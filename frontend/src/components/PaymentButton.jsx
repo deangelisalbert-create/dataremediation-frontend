@@ -7,8 +7,24 @@ export function PaymentButton({ userEmail, fileName }) {
   };
 
   return (
-    <button onClick={handlePayment}>
-      Payer pour traiter "{fileName}"
+    <button
+      onClick={handlePayment}
+      style={{
+        width: '100%',
+        background: '#00e5a0',
+        color: '#000',
+        fontWeight: 700,
+        padding: '11px 26px',
+        borderRadius: '6px',
+        fontSize: '12px',
+        letterSpacing: '.06em',
+        textTransform: 'uppercase',
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: "'JetBrains Mono', monospace",
+      }}
+    >
+      💳 Payer pour traiter "{fileName}"
     </button>
   );
 }
