@@ -12,7 +12,7 @@ import { PaymentButton } from './components/PaymentButton';
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
-const ADMIN_EMAILS   = ['deangelisalbert@gmail.com'];
+const ADMIN_EMAILS   = ['deangelis.albert@gmail.com'];
 
 const P = {
   bg:'#06080f',surface:'#0b0e18',card:'#0f1220',
