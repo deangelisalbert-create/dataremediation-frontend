@@ -1,5 +1,6 @@
     // frontend/src/App.jsx
 import { useState, useEffect, useRef, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import {
   register, login, logout,
   listFiles, uploadFile, deleteFile,
@@ -291,7 +292,6 @@ function ForgotPasswordScreen({ onBack }) {
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Mot de passe oublié</div>
           <div style={{fontSize:11,color:P.muted,marginTop:6}}>Entrez votre email pour recevoir un lien de réinitialisation</div>
         </div>
-
         {sent ? (
           <div style={{textAlign:'center'}}>
             <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px',marginBottom:20}}>
@@ -354,7 +354,6 @@ function ResetPasswordScreen({ onSuccess }) {
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Nouveau mot de passe</div>
           <div style={{fontSize:11,color:P.muted,marginTop:6}}>Choisissez un nouveau mot de passe sécurisé</div>
         </div>
-
         {done ? (
           <div style={{textAlign:'center'}}>
             <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px'}}>
@@ -470,26 +469,22 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// Remplace uniquement la fonction UploadZone dans App.jsx
-
-// ─── UploadZone avec PaymentButton + blocage import ──────────────────────────
+// ─── UploadZone avec PaymentButton + blocage import + détection xlsx ──────────
 function UploadZone({ onDone, onCancel, user }) {
-  const [dragging,    setDragging]    = useState(false);
-  const [file,        setFile]        = useState(null);
-  const [errs,        setErrs]        = useState([]);
-  const [progress,    setProgress]    = useState(0);
-  const [uploading,   setUploading]   = useState(false);
-  const [error,       setError]       = useState('');
+  const [dragging,       setDragging]       = useState(false);
+  const [file,           setFile]           = useState(null);
+  const [errs,           setErrs]           = useState([]);
+  const [progress,       setProgress]       = useState(0);
+  const [uploading,      setUploading]      = useState(false);
+  const [error,          setError]          = useState('');
   const [nbFournisseurs, setNbFournisseurs] = useState(0);
-  const [paid,        setPaid]        = useState(false);
+  const [paid,           setPaid]           = useState(false);
   const inputRef = useRef();
 
-  // Vérifier si retour depuis Stripe avec ?paid=true
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('paid') === 'true') {
       setPaid(true);
-      // Nettoyer l'URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -501,21 +496,33 @@ function UploadZone({ onDone, onCancel, user }) {
     if (!e.length) detectFournisseurs(f);
   };
 
-  // Détection approximative du nombre de lignes (= fournisseurs)
   const detectFournisseurs = (f) => {
     const ext = '.' + f.name.split('.').pop().toLowerCase();
+
     if (ext === '.csv') {
       const reader = new FileReader();
       reader.onload = (e) => {
         const lines = e.target.result.split('\n').filter(l => l.trim()).length;
-        // On soustrait 1 pour l'en-tête
         setNbFournisseurs(Math.max(0, lines - 1));
       };
       reader.readAsText(f);
+
+    } else if (ext === '.xlsx' || ext === '.xls') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const workbook = XLSX.read(e.target.result, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+          setNbFournisseurs(rows.length);
+        } catch {
+          setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
+        }
+      };
+      reader.readAsArrayBuffer(f);
+
     } else {
-      // Pour xlsx/xls/pdf : estimation par taille (1 Ko ≈ 3 fournisseurs)
-      const estimate = Math.round(f.size / 1024 * 3);
-      setNbFournisseurs(Math.max(1, estimate));
+      setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
     }
   };
 
@@ -550,7 +557,7 @@ function UploadZone({ onDone, onCancel, user }) {
         {file ? (
           <><div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
           <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
-          <div style={{fontSize:11,color:P.muted}}>{fmtSize(file.size)}{nbFournisseurs > 0 && ` · ~${nbFournisseurs} fournisseurs détectés`}</div></>
+          <div style={{fontSize:11,color:P.muted}}>{fmtSize(file.size)}{nbFournisseurs > 0 && ` · ${nbFournisseurs} fournisseurs détectés`}</div></>
         ) : (
           <><div style={{fontSize:36,marginBottom:10,color:P.dim}}>⊕</div>
           <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-déposer ou cliquer</div>
@@ -576,7 +583,6 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
-      {/* Paiement ou confirmation */}
       {file && errs.length === 0 && !uploading && (
         <div style={{marginTop:16}}>
           {paid ? (
@@ -728,13 +734,11 @@ function ReportPanel({ file, onClose, userPlan }) {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport détaillé</div>
         <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>✕</button>
       </div>
-
       <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
         <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
         <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
         {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Terminé {fmtDate(file.completed_at)}</div>}
       </div>
-
       {!isDone ? (
         <div style={{textAlign:'center',padding:'32px 0'}}>
           {file.status==='error' ? (
@@ -762,21 +766,18 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             ))}
           </div>
-
           {results.length > 0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
                 Détail par fournisseur
                 <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:8}}>({results.length})</span>
               </div>
-
               <input
                 style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
                 placeholder="Rechercher nom ou alias…"
                 value={search}
                 onChange={e=>setSearch(e.target.value)}
               />
-
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
                   ['all',      `Tous (${counts.all})`,             P.chrome],
@@ -793,7 +794,6 @@ function ReportPanel({ file, onClose, userPlan }) {
                   }}>{label}</button>
                 ))}
               </div>
-
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
                 {filtered.length === 0 ? (
                   <div style={{textAlign:'center',padding:'20px 0',color:P.muted,fontSize:11}}>Aucun résultat</div>
@@ -810,17 +810,14 @@ function ReportPanel({ file, onClose, userPlan }) {
                           {tag.icon} {tag.label}
                         </span>
                       </div>
-
                       <div style={{display:'flex',gap:10,marginBottom:4}}>
                         <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'✗'} SIRET/SIREN</span>
                         <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'✗'} TVA</span>
                         {r.siren_coherent === false && <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>}
                       </div>
-
                       {(r.erreurs||[]).map((e,j)=>(
                         <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>✗ {e}</div>
                       ))}
-
                       {r.suggestion && (
                         <div style={{fontSize:10,color:r.statut?.includes('Conforme')?P.accent:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
                           → {r.suggestion}
@@ -832,7 +829,6 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             </div>
           )}
-
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
