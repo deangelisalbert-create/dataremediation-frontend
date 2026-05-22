@@ -1,15 +1,8 @@
 // frontend/src/api.js
-// ═══════════════════════════════════════════════════════════
-//  Client API — Remplace tous les appels directs à Anthropic
-//  Toutes les requêtes passent maintenant par le backend.
-//  La clé API Claude n'est PLUS dans le frontend.
-// ═══════════════════════════════════════════════════════════
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
-// ── Gestion des tokens en mémoire (pas de localStorage pour les access tokens)
 let _accessToken  = null;
-let _refreshToken = null; // Refresh token peut être en localStorage
+let _refreshToken = null;
 
 function getAccessToken()  { return _accessToken; }
 function getRefreshToken() { return localStorage.getItem('dr_refresh') || _refreshToken; }
@@ -27,30 +20,24 @@ function clearTokens() {
   localStorage.removeItem('dr_user');
 }
 
-// ── Requête de base avec gestion auto du refresh ──────────
 async function request(method, path, body = null, isFormData = false) {
   const headers = {};
-
   if (!isFormData) headers['Content-Type'] = 'application/json';
   if (getAccessToken()) headers['Authorization'] = `Bearer ${getAccessToken()}`;
 
   const config = {
     method,
     headers,
-    body: body
-      ? (isFormData ? body : JSON.stringify(body))
-      : undefined,
+    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
   };
 
   let response = await fetch(`${BASE_URL}${path}`, config);
 
-  // Refresh automatique si token expiré
   if (response.status === 401) {
     const data = await response.json().catch(() => ({}));
     if (data.code === 'TOKEN_EXPIRED') {
       const refreshed = await tryRefresh();
       if (refreshed) {
-        // Réessayer avec le nouveau token
         headers['Authorization'] = `Bearer ${getAccessToken()}`;
         response = await fetch(`${BASE_URL}${path}`, { ...config, headers });
       } else {
@@ -66,7 +53,6 @@ async function request(method, path, body = null, isFormData = false) {
     throw new Error(err.error || `Erreur ${response.status}`);
   }
 
-  // Certains DELETE renvoient 204 sans body
   if (response.status === 204) return null;
   return response.json();
 }
@@ -88,10 +74,6 @@ async function tryRefresh() {
     return false;
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-//  API Publique
-// ═══════════════════════════════════════════════════════════
 
 // ── Auth ──────────────────────────────────────────────────
 export async function register(company, email, password) {
@@ -134,15 +116,20 @@ export async function listFiles() {
   return data.files;
 }
 
-export async function uploadFile(file, onProgress) {
+// ── Upload avec header X-Nb-Fournisseurs ──────────────────
+export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
   const formData = new FormData();
   formData.append('file', file);
 
-  // Upload avec progression (XHR pour avoir le progress event)
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE_URL}/api/audit/upload`);
     xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
+
+    // Envoyer le nombre de fournisseurs détectés
+    if (nbFournisseurs > 0) {
+      xhr.setRequestHeader('X-Nb-Fournisseurs', String(nbFournisseurs));
+    }
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -172,7 +159,12 @@ export async function deleteFile(fileId) {
   return request('DELETE', `/api/audit/files/${fileId}`);
 }
 
-// ── Rapports ─────────────────────────────────────────────
+// ── Crédits et abonnement ─────────────────────────────────
+export async function getCredits() {
+  return request('GET', '/api/audit/credits');
+}
+
+// ── Rapports ──────────────────────────────────────────────
 export async function getDownloadLink(fileId, type) {
   return request('POST', `/api/reports/${fileId}/link`, { type });
 }
