@@ -22,6 +22,41 @@ const P = {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
+const ABONNEMENTS = [
+  {
+    label: 'Starter',
+    prix: '249 € HT/mois',
+    desc: 'Jusqu\'à 50 fournisseurs',
+    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Rapport PDF', 'Support email'],
+    link: 'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05',
+    color: '#00e5a0',
+  },
+  {
+    label: 'PME BTP',
+    prix: '459 € HT/mois',
+    desc: '51 à 200 fournisseurs',
+    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Rapport PDF', 'Support prioritaire'],
+    link: 'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06',
+    color: '#3d8eff',
+  },
+  {
+    label: 'PME Structurée',
+    prix: '890 € HT/mois',
+    desc: '201 à 500 fournisseurs',
+    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Scoring conformité', 'Rapport PDF avancé', 'Support dédié'],
+    link: 'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07',
+    color: '#ffb340',
+  },
+  {
+    label: 'Cabinet Comptable',
+    prix: '1 990 € HT/mois',
+    desc: 'Portefeuille clients illimité',
+    features: ['Multi-clients', 'Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Tableaux de bord', 'Rapports PDF white-label', 'Account manager dédié'],
+    link: 'https://buy.stripe.com/28EfZae87grn0664OTfQI08',
+    color: '#ff4566',
+  },
+];
+
 function fmtSize(b){ return b>1048576?`${(b/1048576).toFixed(1)} Mo`:`${(b/1024).toFixed(0)} Ko`; }
 function fmtDate(ts){ return new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
 function fmtTTL(ts){
@@ -383,7 +418,78 @@ function ResetPasswordScreen({ onSuccess }) {
   );
 }
 
+// ─── Panel Abonnements ────────────────────────────────────────────────────────
+function AbonnementsPanel({ user, onClose }) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:24}} onClick={onClose}>
+      <div className="fadeUp card" style={{width:'100%',maxWidth:900,maxHeight:'90vh',overflowY:'auto',padding:32}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Abonnements Suivi Mensuel</div>
+            <div style={{fontSize:11,color:P.muted,marginTop:4}}>Contrôle continu de vos fournisseurs · Résiliable à tout moment · TVA 20% en sus</div>
+          </div>
+          <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>✕ Fermer</button>
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginTop:24}}>
+          {ABONNEMENTS.map((a, i) => (
+            <div key={i} className="card" style={{padding:20,border:`1px solid ${a.color}30`,display:'flex',flexDirection:'column',gap:12}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,color:P.text}}>{a.label}</div>
+                  <div style={{fontSize:10,color:P.muted,marginTop:2}}>{a.desc}</div>
+                </div>
+                <div style={{background:`${a.color}15`,border:`1px solid ${a.color}30`,borderRadius:6,padding:'4px 8px',fontSize:10,color:a.color,fontWeight:700,whiteSpace:'nowrap'}}>
+                  {a.prix}
+                </div>
+              </div>
+
+              <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
+                {a.features.map((feat, j) => (
+                  <div key={j} style={{display:'flex',alignItems:'center',gap:6,fontSize:10,color:P.chrome}}>
+                    <span style={{color:a.color,fontSize:12}}>✓</span>{feat}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  const url = `${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`;
+                  window.location.href = url;
+                }}
+                style={{
+                  width:'100%',
+                  background: a.color,
+                  color: '#000',
+                  fontWeight: 700,
+                  padding: '10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  letterSpacing: '.06em',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  marginTop: 4,
+                }}
+              >
+                → S'abonner
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{marginTop:20,fontSize:10,color:P.dim,textAlign:'center'}}>
+          🔐 Paiement sécurisé Stripe · Résiliation possible à tout moment · Facture PDF automatique
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
+  const [showAbonnements, setShowAbonnements] = useState(false);
+
   const stats = {
     total:      files.length,
     done:       files.filter(f=>f.status==='done').length,
@@ -393,6 +499,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+      {showAbonnements && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
+
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
@@ -402,6 +510,12 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <button
+            onClick={()=>setShowAbonnements(true)}
+            style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}
+          >
+            📅 Abonnements
+          </button>
           <div className="glow" style={{width:6,height:6,borderRadius:'50%',background:P.accent}} />
           <div style={{fontSize:10,color:P.muted,padding:'4px 10px',background:P.card,border:`1px solid ${P.border}`,borderRadius:6}}>{user.email}</div>
           <button className="btn-ghost" onClick={onLogout} style={{fontSize:10,padding:'6px 12px'}}>Déconnexion ↗</button>
@@ -591,7 +705,6 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
-      {/* Affichage seulement quand détection terminée */}
       {file && errs.length === 0 && !uploading && !detecting && (
         <div style={{marginTop:16}}>
           {paid ? (
@@ -617,7 +730,6 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
-      {/* Spinner pendant détection */}
       {file && detecting && (
         <div style={{marginTop:16,textAlign:'center',fontSize:11,color:P.muted}}>
           <span className="spin" style={{marginRight:6}}>⟳</span>Analyse du fichier…
