@@ -248,7 +248,16 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,animation:'progressFill 2s ease-in-out infinite',pointerEvents:'none'}} />
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:48,height:48,borderRadius:10,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:22,marginBottom:12}}>⚡</div>
+          <img
+  src="/logo.png"
+  alt="Logo"
+  style={{
+    width: 42,
+    height: 42,
+    objectFit: 'contain',
+    borderRadius: 10
+  }}
+/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
           <div style={{fontSize:10,color:P.muted,letterSpacing:'.12em',textTransform:'uppercase',marginTop:4}}>
             {mode==='login'?'Espace Client Sécurisé':'Créer un compte'}
