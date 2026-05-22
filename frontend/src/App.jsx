@@ -582,8 +582,8 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
   }, []);
 
   // Vérifier si le client a déjà des crédits/abonnement
-  const hasCredits = credits && (credits.credits > 0 || credits.abonnement);
-  const canUpload = isAdmin || paid || hasCredits;
+ const hasCredits = isAdmin || (credits && (credits.credits > 0 || credits.abonnement));
+const canUpload = isAdmin || paid || hasCredits;
 
   const handle = (f) => {
     const e = valFile(f);
