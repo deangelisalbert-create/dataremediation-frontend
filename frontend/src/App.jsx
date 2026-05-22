@@ -14,7 +14,7 @@ const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
 
 // ─── Emails admin — bypass paiement pour démos ────────────────────────────────
 const ADMIN_EMAILS = [
-  'deangelisalbert@gmail.com',
+  'deangelis.albert@gmail.com',
 ];
 
 const P = {
