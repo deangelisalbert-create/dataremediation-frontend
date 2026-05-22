@@ -985,17 +985,30 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             </div>
           )}
-          <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14}}>
-            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
-            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {results.length > 0 && (
-                <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-                  {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
-                  <div style={{flex:1,textAlign:'left'}}>
-                    <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
-                    <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>CSV · Données nettoyées · Lien 15 min</div>
-                  </div>
+          {/* Juste après les stats, avant results.length > 0 */}
+<div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
+  <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
+  {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
+  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+    {results.length > 0 && (
+      <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+        {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
+        <div style={{flex:1,textAlign:'left'}}>
+          <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
+          <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>CSV · Données nettoyées · Lien 15 min</div>
+        </div>
+      </button>
+    )}
+    <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+      {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
+      <div style={{flex:1,textAlign:'left'}}>
+        <div style={{fontWeight:600}}>Rapport complet</div>
+        <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
+      </div>
+    </button>
+  </div>
+  <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
+</div>
                 </button>
               )}
               <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
