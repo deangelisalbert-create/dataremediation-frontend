@@ -5,17 +5,14 @@ import {
   register, login, logout,
   listFiles, uploadFile, deleteFile,
   getDownloadLink, buildDownloadUrl, restoreSession,
+  getCredits,
 } from './api';
 import { PaymentButton } from './components/PaymentButton';
 
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
-
-// ─── Emails admin — bypass paiement pour démos ────────────────────────────────
-const ADMIN_EMAILS = [
-  'deangelis.albert@gmail.com',
-];
+const ADMIN_EMAILS   = ['deangelisalbert@gmail.com'];
 
 const P = {
   bg:'#06080f',surface:'#0b0e18',card:'#0f1220',
@@ -28,38 +25,10 @@ const P = {
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 const ABONNEMENTS = [
-  {
-    label: 'Starter',
-    prix: '249 € HT/mois',
-    desc: 'Jusqu\'à 50 fournisseurs',
-    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Rapport PDF', 'Support email'],
-    link: 'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05',
-    color: '#00e5a0',
-  },
-  {
-    label: 'PME BTP',
-    prix: '459 € HT/mois',
-    desc: '51 à 200 fournisseurs',
-    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Rapport PDF', 'Support prioritaire'],
-    link: 'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06',
-    color: '#3d8eff',
-  },
-  {
-    label: 'PME Structurée',
-    prix: '890 € HT/mois',
-    desc: '201 à 500 fournisseurs',
-    features: ['Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Scoring conformité', 'Rapport PDF avancé', 'Support dédié'],
-    link: 'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07',
-    color: '#ffb340',
-  },
-  {
-    label: 'Cabinet Comptable',
-    prix: '1 990 € HT/mois',
-    desc: 'Portefeuille clients illimité',
-    features: ['Multi-clients', 'Contrôle SIRET mensuel', 'Validation TVA', 'Détection doublons', 'Tableaux de bord', 'Rapports PDF white-label', 'Account manager dédié'],
-    link: 'https://buy.stripe.com/28EfZae87grn0664OTfQI08',
-    color: '#ff4566',
-  },
+  { label:'Starter', prix:'249 € HT/mois', desc:'Jusqu\'à 50 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
+  { label:'PME BTP', prix:'459 € HT/mois', desc:'51 à 200 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Rapport PDF','Support prioritaire'], link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff' },
+  { label:'PME Structurée', prix:'890 € HT/mois', desc:'201 à 500 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Scoring conformité','Rapport PDF avancé','Support dédié'], link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340' },
+  { label:'Cabinet Comptable', prix:'1 990 € HT/mois', desc:'Portefeuille clients illimité', features:['Multi-clients','Contrôle SIRET mensuel','Validation TVA','Détection doublons','Tableaux de bord','Rapports PDF white-label','Account manager dédié'], link:'https://buy.stripe.com/28EfZae87grn0664OTfQI08', color:'#ff4566' },
 ];
 
 function fmtSize(b){ return b>1048576?`${(b/1048576).toFixed(1)} Mo`:`${(b/1024).toFixed(0)} Ko`; }
@@ -97,10 +66,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const resetToken = params.get('token');
-    if (resetToken) {
-      setScreen('reset-password');
-      return;
-    }
+    if (resetToken) { setScreen('reset-password'); return; }
     restoreSession().then(u => {
       if (u) { setUser(u); setScreen('dashboard'); }
       else    setScreen('login');
@@ -144,29 +110,19 @@ export default function App() {
   return (
     <Shell>
       {(screen==='login'||screen==='register') && (
-        <AuthScreen
-          mode={screen}
-          onSuccess={handleLogin}
+        <AuthScreen mode={screen} onSuccess={handleLogin}
           onSwitch={() => setScreen(screen==='login'?'register':'login')}
-          onForgot={() => setScreen('forgot-password')}
-        />
+          onForgot={() => setScreen('forgot-password')} />
       )}
-      {screen === 'forgot-password' && (
-        <ForgotPasswordScreen onBack={() => setScreen('login')} />
-      )}
+      {screen === 'forgot-password' && <ForgotPasswordScreen onBack={() => setScreen('login')} />}
       {screen === 'reset-password' && (
-        <ResetPasswordScreen onSuccess={() => {
-          window.history.replaceState({}, '', '/');
-          setScreen('login');
-        }} />
+        <ResetPasswordScreen onSuccess={() => { window.history.replaceState({}, '', '/'); setScreen('login'); }} />
       )}
       {screen === 'dashboard' && (
-        <Dashboard
-          user={user} files={files}
+        <Dashboard user={user} files={files}
           onLogout={handleLogout} onReload={loadFiles}
           showUpload={showUpload} setShowUpload={setShowUpload}
-          activeFile={activeFile} setActiveFile={setActiveFile}
-        />
+          activeFile={activeFile} setActiveFile={setActiveFile} />
       )}
     </Shell>
   );
@@ -221,9 +177,9 @@ function LoadingScreen() {
 }
 
 function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
-  const [form, setForm]       = useState({company:'',email:'',password:'',confirm:''});
+  const [form, setForm] = useState({company:'',email:'',password:'',confirm:''});
   const [loading, setLoading] = useState(false);
-  const [err, setErr]         = useState('');
+  const [err, setErr] = useState('');
   const f = (k,v) => setForm(p=>({...p,[k]:v}));
 
   const submit = async () => {
@@ -248,16 +204,7 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,animation:'progressFill 2s ease-in-out infinite',pointerEvents:'none'}} />
         <div style={{textAlign:'center',marginBottom:32}}>
-          <img
-  src="/logo.png"
-  alt="Logo"
-  style={{
-    width: 42,
-    height: 42,
-    objectFit: 'contain',
-    borderRadius: 10
-  }}
-/>
+          <div style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:48,height:48,borderRadius:10,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:22,marginBottom:12}}>⚡</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
           <div style={{fontSize:10,color:P.muted,letterSpacing:'.12em',textTransform:'uppercase',marginTop:4}}>
             {mode==='login'?'Espace Client Sécurisé':'Créer un compte'}
@@ -278,9 +225,7 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
               <div style={{fontSize:10,color:P.muted,letterSpacing:'.06em',textTransform:'uppercase'}}>Mot de passe</div>
               {mode==='login' && (
-                <button onClick={onForgot} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,textDecoration:'underline'}}>
-                  Mot de passe oublié ?
-                </button>
+                <button onClick={onForgot} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,textDecoration:'underline'}}>Mot de passe oublié ?</button>
               )}
             </div>
             <input className="field" type="password" placeholder="••••••••" value={form.password} onChange={e=>f('password',e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
@@ -313,18 +258,17 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
 }
 
 function ForgotPasswordScreen({ onBack }) {
-  const [email,   setEmail]   = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent,    setSent]    = useState(false);
-  const [err,     setErr]     = useState('');
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState('');
 
   const submit = async () => {
     if (!email) return setErr('Email requis');
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
       if (!res.ok) throw new Error('Erreur serveur');
@@ -346,7 +290,7 @@ function ForgotPasswordScreen({ onBack }) {
             <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px',marginBottom:20}}>
               <div style={{fontSize:24,marginBottom:8}}>✉️</div>
               <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>Email envoyé !</div>
-              <div style={{fontSize:11,color:P.muted}}>Vérifiez votre boîte mail et cliquez sur le lien de réinitialisation.</div>
+              <div style={{fontSize:11,color:P.muted}}>Vérifiez votre boîte mail et cliquez sur le lien.</div>
             </div>
             <button className="btn-ghost" onClick={onBack} style={{width:'100%'}}>← Retour à la connexion</button>
           </div>
@@ -370,11 +314,10 @@ function ForgotPasswordScreen({ onBack }) {
 
 function ResetPasswordScreen({ onSuccess }) {
   const [password, setPassword] = useState('');
-  const [confirm,  setConfirm]  = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [err,      setErr]      = useState('');
-  const [done,     setDone]     = useState(false);
-
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [done, setDone] = useState(false);
   const token = new URLSearchParams(window.location.search).get('token');
 
   const submit = async () => {
@@ -383,8 +326,7 @@ function ResetPasswordScreen({ onSuccess }) {
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
@@ -401,7 +343,6 @@ function ResetPasswordScreen({ onSuccess }) {
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:36,marginBottom:12}}>🔒</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Nouveau mot de passe</div>
-          <div style={{fontSize:11,color:P.muted,marginTop:6}}>Choisissez un nouveau mot de passe sécurisé</div>
         </div>
         {done ? (
           <div style={{textAlign:'center'}}>
@@ -432,7 +373,7 @@ function ResetPasswordScreen({ onSuccess }) {
   );
 }
 
-// ─── Panel Abonnements ────────────────────────────────────────────────────────
+// ── Panel Abonnements ─────────────────────────────────────────────────────────
 function AbonnementsPanel({ user, onClose }) {
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:24}} onClick={onClose}>
@@ -440,7 +381,7 @@ function AbonnementsPanel({ user, onClose }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Abonnements Suivi Mensuel</div>
-            <div style={{fontSize:11,color:P.muted,marginTop:4}}>Contrôle continu de vos fournisseurs · Résiliable à tout moment · TVA 20% en sus</div>
+            <div style={{fontSize:11,color:P.muted,marginTop:4}}>Contrôle continu · Résiliable à tout moment · TVA 20% en sus</div>
           </div>
           <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>✕ Fermer</button>
         </div>
@@ -452,9 +393,7 @@ function AbonnementsPanel({ user, onClose }) {
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,color:P.text}}>{a.label}</div>
                   <div style={{fontSize:10,color:P.muted,marginTop:2}}>{a.desc}</div>
                 </div>
-                <div style={{background:`${a.color}15`,border:`1px solid ${a.color}30`,borderRadius:6,padding:'4px 8px',fontSize:10,color:a.color,fontWeight:700,whiteSpace:'nowrap'}}>
-                  {a.prix}
-                </div>
+                <div style={{background:`${a.color}15`,border:`1px solid ${a.color}30`,borderRadius:6,padding:'4px 8px',fontSize:10,color:a.color,fontWeight:700,whiteSpace:'nowrap'}}>{a.prix}</div>
               </div>
               <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
                 {a.features.map((feat, j) => (
@@ -464,19 +403,9 @@ function AbonnementsPanel({ user, onClose }) {
                 ))}
               </div>
               <button
-                onClick={() => {
-                  const url = `${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`;
-                  window.location.href = url;
-                }}
-                style={{
-                  width:'100%',background:a.color,color:'#000',fontWeight:700,
-                  padding:'10px',borderRadius:'6px',fontSize:'11px',
-                  letterSpacing:'.06em',textTransform:'uppercase',border:'none',
-                  cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4,
-                }}
-              >
-                → S'abonner
-              </button>
+                onClick={() => { window.location.href = `${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`; }}
+                style={{width:'100%',background:a.color,color:'#000',fontWeight:700,padding:'10px',borderRadius:'6px',fontSize:'11px',letterSpacing:'.06em',textTransform:'uppercase',border:'none',cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4}}
+              >→ S'abonner</button>
             </div>
           ))}
         </div>
@@ -488,9 +417,57 @@ function AbonnementsPanel({ user, onClose }) {
   );
 }
 
+// ── Widget Crédits ────────────────────────────────────────────────────────────
+function CreditsWidget({ credits, onOpenAbonnements }) {
+  if (!credits) return null;
+
+  const { credits: nbCredits, abonnement, abonnement_fournisseurs_restants, abonnement_quota, abonnement_reset_date } = credits;
+
+  if (abonnement) {
+    const resetDate = abonnement_reset_date ? new Date(abonnement_reset_date).toLocaleDateString('fr-FR') : '';
+    const pct = abonnement_quota > 0 ? Math.round((abonnement_fournisseurs_restants / abonnement_quota) * 100) : 0;
+    const color = pct > 50 ? P.accent : pct > 20 ? P.warn : P.danger;
+    return (
+      <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:8}}>
+        <div>
+          <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>Abonnement {abonnement}</div>
+          <div style={{color,fontWeight:700}}>{abonnement_fournisseurs_restants} / {abonnement_quota} fournisseurs restants</div>
+          {resetDate && <div style={{color:P.dim,fontSize:9}}>Reset le {resetDate}</div>}
+        </div>
+        <div style={{width:6,height:6,borderRadius:'50%',background:color}} />
+      </div>
+    );
+  }
+
+  if (nbCredits > 0) {
+    return (
+      <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
+        <span style={{color:P.accent,fontWeight:700}}>💳 {nbCredits} crédit{nbCredits > 1 ? 's' : ''}</span>
+        <span style={{color:P.muted}}>disponible{nbCredits > 1 ? 's' : ''}</span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onOpenAbonnements}
+      style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}
+    >
+      ⚠ Aucun crédit — S'abonner
+    </button>
+  );
+}
+
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
   const [showAbonnements, setShowAbonnements] = useState(false);
+  const [credits, setCredits] = useState(null);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      getCredits().then(setCredits).catch(()=>{});
+    }
+  }, [isAdmin, showUpload]);
 
   const stats = {
     total:      files.length,
@@ -505,16 +482,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <img
-  src="/logo.png"
-  alt="Logo"
-  style={{
-    width: 42,
-    height: 42,
-    objectFit: 'contain',
-    borderRadius: 10
-  }}
-/>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemédiation</div>
             <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>
@@ -524,10 +492,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <button
-            onClick={()=>setShowAbonnements(true)}
-            style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}
-          >
+          {!isAdmin && <CreditsWidget credits={credits} onOpenAbonnements={()=>setShowAbonnements(true)} />}
+          <button onClick={()=>setShowAbonnements(true)} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
             📅 Abonnements
           </button>
           <div className="glow" style={{width:6,height:6,borderRadius:'50%',background:P.accent}} />
@@ -557,12 +523,9 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         <div style={{display:'grid',gridTemplateColumns:activeFile?'1fr 400px':'1fr',gap:16}}>
           <div>
             {showUpload ? (
-              <UploadZone
-                user={user}
-                isAdmin={isAdmin}
-                onDone={async () => { setShowUpload(false); await onReload(); }}
-                onCancel={() => setShowUpload(false)}
-              />
+              <UploadZone user={user} isAdmin={isAdmin} credits={credits}
+                onDone={async () => { setShowUpload(false); await onReload(); getCredits().then(setCredits).catch(()=>{}); }}
+                onCancel={() => setShowUpload(false)} />
             ) : (
               <>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -581,8 +544,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
                           await deleteFile(f.id).catch(()=>{});
                           if (activeFile?.id===f.id) setActiveFile(null);
                           onReload();
-                        }}
-                      />
+                        }} />
                     ))}
                   </div>
                 )}
@@ -598,8 +560,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// ─── UploadZone avec admin bypass ─────────────────────────────────────────────
-function UploadZone({ onDone, onCancel, user, isAdmin }) {
+// ── UploadZone ────────────────────────────────────────────────────────────────
+function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
   const [dragging,       setDragging]       = useState(false);
   const [file,           setFile]           = useState(null);
   const [errs,           setErrs]           = useState([]);
@@ -619,6 +581,10 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
     }
   }, []);
 
+  // Vérifier si le client a déjà des crédits/abonnement
+  const hasCredits = credits && (credits.credits > 0 || credits.abonnement);
+  const canUpload = isAdmin || paid || hasCredits;
+
   const handle = (f) => {
     const e = valFile(f);
     setErrs(e);
@@ -629,7 +595,6 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
   const detectFournisseurs = (f) => {
     setDetecting(true);
     const ext = '.' + f.name.split('.').pop().toLowerCase();
-
     if (ext === '.csv') {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -638,7 +603,6 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
         setDetecting(false);
       };
       reader.readAsText(f);
-
     } else if (ext === '.xlsx' || ext === '.xls') {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -647,26 +611,21 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(sheet);
           setNbFournisseurs(rows.length);
-        } catch {
-          setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
-        }
+        } catch { setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3))); }
         setDetecting(false);
       };
       reader.readAsArrayBuffer(f);
-
     } else {
       setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
       setDetecting(false);
     }
   };
 
-  const canUpload = paid || isAdmin;
-
   const upload = async () => {
     if (!file || !canUpload) return;
     setUploading(true); setError('');
     try {
-      await uploadFile(file, setProgress);
+      await uploadFile(file, setProgress, nbFournisseurs);
       await onDone();
     } catch(e) {
       setError(e.message);
@@ -679,11 +638,7 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
-          {isAdmin && (
-            <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>
-              MODE DÉMO
-            </span>
-          )}
+          {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>MODE DÉMO</span>}
         </div>
         <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>✕ Annuler</button>
       </div>
@@ -736,7 +691,7 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
               <span style={{fontSize:18}}>{isAdmin ? '🔑' : '✅'}</span>
               <div>
                 <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>
-                  {isAdmin ? 'Accès démo — paiement bypassed' : 'Paiement confirmé'}
+                  {isAdmin ? 'Accès démo — paiement bypassed' : hasCredits ? 'Crédit disponible — prêt à analyser' : 'Paiement confirmé'}
                 </div>
                 <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
               </div>
@@ -746,11 +701,7 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
               <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
                 Étape 1 — Payer pour activer le traitement
               </div>
-              <PaymentButton
-                userEmail={user?.email}
-                fileName={file.name}
-                nbFournisseurs={nbFournisseurs}
-              />
+              <PaymentButton userEmail={user?.email} fileName={file.name} nbFournisseurs={nbFournisseurs} />
             </>
           )}
         </div>
@@ -762,21 +713,14 @@ function UploadZone({ onDone, onCancel, user, isAdmin }) {
         </div>
       )}
 
-      <button
-        className="btn-primary"
-        onClick={upload}
+      <button className="btn-primary" onClick={upload}
         disabled={!file || errs.length > 0 || uploading || !canUpload || detecting}
         style={{marginTop:10,width:'100%',opacity:(!canUpload && file && !detecting) ? 0.35 : 1}}
       >
-        {uploading ? (
-          <><span className="spin">⟳</span> Upload en cours…</>
-        ) : detecting ? (
-          '⟳ Analyse du fichier…'
-        ) : !canUpload && file ? (
-          '🔒 Paiement requis avant l\'import'
-        ) : (
-          '↑ Importer et analyser'
-        )}
+        {uploading ? <><span className="spin">⟳</span> Upload en cours…</>
+         : detecting ? '⟳ Analyse du fichier…'
+         : !canUpload && file ? '🔒 Paiement requis avant l\'import'
+         : '↑ Importer et analyser'}
       </button>
 
       {!canUpload && file && !detecting && (
@@ -866,15 +810,12 @@ function ReportPanel({ file, onClose, userPlan }) {
   };
 
   const filtered = results.filter(r => {
-    const matchFilter =
-      filter === 'all' ||
+    const matchFilter = filter === 'all' ||
       (filter === 'conforme' && (r.statut||'').includes('Conforme')) ||
       (filter === 'corriger' && (r.statut||'').includes('corriger')) ||
       (filter === 'bloquant' && (r.statut||'').includes('Bloquant'));
     const q = search.toLowerCase();
-    const matchSearch = !q ||
-      (r.alias||'').toLowerCase().includes(q) ||
-      (r.nom_reel||'').toLowerCase().includes(q);
+    const matchSearch = !q || (r.alias||'').toLowerCase().includes(q) || (r.nom_reel||'').toLowerCase().includes(q);
     return matchFilter && matchSearch;
   });
 
@@ -890,11 +831,13 @@ function ReportPanel({ file, onClose, userPlan }) {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport détaillé</div>
         <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>✕</button>
       </div>
+
       <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
         <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
         <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
         {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Terminé {fmtDate(file.completed_at)}</div>}
       </div>
+
       {!isDone ? (
         <div style={{textAlign:'center',padding:'32px 0'}}>
           {file.status==='error' ? (
@@ -909,7 +852,8 @@ function ReportPanel({ file, onClose, userPlan }) {
         </div>
       ) : (
         <>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+          {/* Stats */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             {[
               ['Total',      counts.all,      P.blue],
               ['Taux',       `${summary.taux !== undefined ? summary.taux : file.taux_conformite || 0}%`, P.accent],
@@ -922,6 +866,33 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             ))}
           </div>
+
+          {/* ── Téléchargements EN HAUT ── */}
+          <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
+            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Téléchargements sécurisés</div>
+            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {results.length > 0 && (
+                <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+                  {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
+                  <div style={{flex:1,textAlign:'left'}}>
+                    <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
+                    <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>XLSX · Données nettoyées · Lien 15 min</div>
+                  </div>
+                </button>
+              )}
+              <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
+                {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
+                <div style={{flex:1,textAlign:'left'}}>
+                  <div style={{fontWeight:600}}>Rapport PDF complet</div>
+                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
+                </div>
+              </button>
+            </div>
+            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
+          </div>
+
+          {/* Détail fournisseurs */}
           {results.length > 0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
@@ -930,9 +901,7 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
               <input
                 style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
-                placeholder="Rechercher nom ou alias…"
-                value={search}
-                onChange={e=>setSearch(e.target.value)}
+                placeholder="Rechercher nom ou alias…" value={search} onChange={e=>setSearch(e.target.value)}
               />
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
@@ -985,42 +954,6 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             </div>
           )}
-          {/* Juste après les stats, avant results.length > 0 */}
-<div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
-  <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:12}}>Téléchargements sécurisés</div>
-  {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
-  <div style={{display:'flex',flexDirection:'column',gap:8}}>
-    {results.length > 0 && (
-      <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-        {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
-        <div style={{flex:1,textAlign:'left'}}>
-          <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
-          <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>CSV · Données nettoyées · Lien 15 min</div>
-        </div>
-      </button>
-    )}
-    <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-      {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
-      <div style={{flex:1,textAlign:'left'}}>
-        <div style={{fontWeight:600}}>Rapport complet</div>
-        <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
-      </div>
-    </button>
-  </div>
-  <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
-</div>
-                </button>
-              )}
-              <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-                {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
-                <div style={{flex:1,textAlign:'left'}}>
-                  <div style={{fontWeight:600}}>Rapport complet</div>
-                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
-                </div>
-              </button>
-            </div>
-            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
-          </div>
         </>
       )}
     </div>
