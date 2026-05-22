@@ -505,7 +505,16 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
+          <img
+  src="/logo.png"
+  alt="Logo"
+  style={{
+    width: 42,
+    height: 42,
+    objectFit: 'contain',
+    borderRadius: 10
+  }}
+/>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemédiation</div>
             <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>
