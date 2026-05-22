@@ -478,6 +478,7 @@ function UploadZone({ onDone, onCancel, user }) {
   const [uploading,      setUploading]      = useState(false);
   const [error,          setError]          = useState('');
   const [nbFournisseurs, setNbFournisseurs] = useState(0);
+  const [detecting,      setDetecting]      = useState(false);
   const [paid,           setPaid]           = useState(false);
   const inputRef = useRef();
 
@@ -497,6 +498,7 @@ function UploadZone({ onDone, onCancel, user }) {
   };
 
   const detectFournisseurs = (f) => {
+    setDetecting(true);
     const ext = '.' + f.name.split('.').pop().toLowerCase();
 
     if (ext === '.csv') {
@@ -504,6 +506,7 @@ function UploadZone({ onDone, onCancel, user }) {
       reader.onload = (e) => {
         const lines = e.target.result.split('\n').filter(l => l.trim()).length;
         setNbFournisseurs(Math.max(0, lines - 1));
+        setDetecting(false);
       };
       reader.readAsText(f);
 
@@ -518,11 +521,13 @@ function UploadZone({ onDone, onCancel, user }) {
         } catch {
           setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
         }
+        setDetecting(false);
       };
       reader.readAsArrayBuffer(f);
 
     } else {
       setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
+      setDetecting(false);
     }
   };
 
@@ -557,7 +562,10 @@ function UploadZone({ onDone, onCancel, user }) {
         {file ? (
           <><div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
           <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
-          <div style={{fontSize:11,color:P.muted}}>{fmtSize(file.size)}{nbFournisseurs > 0 && ` · ${nbFournisseurs} fournisseurs détectés`}</div></>
+          <div style={{fontSize:11,color:P.muted}}>
+            {fmtSize(file.size)}
+            {detecting ? ' · Analyse en cours…' : nbFournisseurs > 0 ? ` · ${nbFournisseurs} fournisseurs détectés` : ''}
+          </div></>
         ) : (
           <><div style={{fontSize:36,marginBottom:10,color:P.dim}}>⊕</div>
           <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-déposer ou cliquer</div>
@@ -583,7 +591,8 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
-      {file && errs.length === 0 && !uploading && (
+      {/* Affichage seulement quand détection terminée */}
+      {file && errs.length === 0 && !uploading && !detecting && (
         <div style={{marginTop:16}}>
           {paid ? (
             <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
@@ -608,14 +617,23 @@ function UploadZone({ onDone, onCancel, user }) {
         </div>
       )}
 
+      {/* Spinner pendant détection */}
+      {file && detecting && (
+        <div style={{marginTop:16,textAlign:'center',fontSize:11,color:P.muted}}>
+          <span className="spin" style={{marginRight:6}}>⟳</span>Analyse du fichier…
+        </div>
+      )}
+
       <button
         className="btn-primary"
         onClick={upload}
-        disabled={!file || errs.length > 0 || uploading || !paid}
-        style={{marginTop:10,width:'100%',opacity:(!paid && file) ? 0.35 : 1}}
+        disabled={!file || errs.length > 0 || uploading || !paid || detecting}
+        style={{marginTop:10,width:'100%',opacity:(!paid && file && !detecting) ? 0.35 : 1}}
       >
         {uploading ? (
           <><span className="spin">⟳</span> Upload en cours…</>
+        ) : detecting ? (
+          '⟳ Analyse du fichier…'
         ) : !paid && file ? (
           '🔒 Paiement requis avant l\'import'
         ) : (
@@ -623,7 +641,7 @@ function UploadZone({ onDone, onCancel, user }) {
         )}
       </button>
 
-      {!paid && file && (
+      {!paid && file && !detecting && (
         <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
           Effectuez le paiement ci-dessus pour débloquer l'import
         </div>
