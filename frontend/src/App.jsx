@@ -1,4 +1,4 @@
-    import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
   register, login, logout,
@@ -7,6 +7,7 @@ import {
   getCredits,
 } from './api';
 import { PaymentButton } from './components/PaymentButton';
+import { RectificationPanel } from './components/RectificationPanel';
 
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -59,367 +60,83 @@ const STATUS_CFG = {
 function LandingPage({ onEnter }) {
   const landingStyles = `
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
-
-    .lp-nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 24px 48px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      background: rgba(13,15,20,0.9);
-      backdrop-filter: blur(16px);
-    }
-    .lp-logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: #F5F3EE;
-      letter-spacing: 0.02em;
-    }
-    .lp-logo span { color: #C9A84C; }
-    .lp-nav-btn {
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #C9A84C;
-      border: 1px solid rgba(201,168,76,0.3);
-      padding: 10px 28px;
-      cursor: pointer;
-      background: transparent;
-      transition: all 0.25s ease;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .lp-nav-btn:hover { background: #C9A84C; color: #0D0F14; border-color: #C9A84C; }
-
-    .lp-hero {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 140px 48px 80px;
-      max-width: 860px;
-    }
-    .lp-eyebrow {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: #C9A84C;
-      margin-bottom: 32px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      opacity: 0;
-      animation: lpFadeUp 0.7s ease 0.1s forwards;
-    }
-    .lp-eyebrow::before {
-      content: '';
-      display: block;
-      width: 36px;
-      height: 1px;
-      background: #C9A84C;
-      flex-shrink: 0;
-    }
-    .lp-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.6rem, 5.5vw, 4.8rem);
-      font-weight: 400;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      color: #F5F3EE;
-      margin-bottom: 36px;
-      opacity: 0;
-      animation: lpFadeUp 0.8s ease 0.25s forwards;
-    }
-    .lp-title em { font-style: italic; color: #C9A84C; }
-    .lp-title strong {
-      font-weight: 600;
-      color: #ffffff;
-      position: relative;
-      display: inline-block;
-    }
-
-    .lp-subtitle {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1.05rem;
-      font-weight: 300;
-      line-height: 1.75;
-      color: #7A7A85;
-      max-width: 540px;
-      margin-bottom: 20px;
-      opacity: 0;
-      animation: lpFadeUp 0.8s ease 0.4s forwards;
-    }
-    .lp-urgence {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: #C9A84C;
-      background: rgba(201,168,76,0.08);
-      border: 1px solid rgba(201,168,76,0.2);
-      border-left: 3px solid #C9A84C;
-      padding: 10px 16px;
-      margin-bottom: 44px;
-      max-width: 540px;
-      letter-spacing: 0.01em;
-      opacity: 0;
-      animation: lpFadeUp 0.8s ease 0.5s forwards;
-    }
-    .lp-actions {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      opacity: 0;
-      animation: lpFadeUp 0.8s ease 0.6s forwards;
-    }
-    .lp-btn-primary {
-      background: #C9A84C;
-      color: #0D0F14;
-      border: none;
-      padding: 17px 44px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-    .lp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(201,168,76,0.3); }
-    .lp-btn-link {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      color: #5A5A65;
-      background: none;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: color 0.2s;
-    }
-    .lp-btn-link:hover { color: #F5F3EE; }
-
-    /* PROBLÈME SECTION */
-    .lp-problem {
-      position: relative;
-      z-index: 1;
-      padding: 80px 48px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      background: rgba(201,168,76,0.03);
-    }
-    .lp-problem-label {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #C9A84C;
-      margin-bottom: 20px;
-    }
-    .lp-problem-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-      font-weight: 400;
-      color: #F5F3EE;
-      line-height: 1.2;
-      max-width: 640px;
-      margin-bottom: 40px;
-    }
-    .lp-problem-title em { font-style: italic; color: #C9A84C; }
-    .lp-risks {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    .lp-risk {
-      padding: 28px 24px;
-      background: #0D0F14;
-    }
-    .lp-risk-icon { font-size: 1.4rem; margin-bottom: 12px; }
-    .lp-risk-title {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: #F5F3EE;
-      margin-bottom: 8px;
-    }
-    .lp-risk-text {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.8rem;
-      line-height: 1.65;
-      color: #5A5A65;
-    }
-
-    /* FEATURES */
-    .lp-features {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-top: 1px solid rgba(255,255,255,0.05);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .lp-feature {
-      padding: 52px 40px;
-      border-right: 1px solid rgba(255,255,255,0.05);
-    }
-    .lp-feature:last-child { border-right: none; }
-    .lp-feature-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.2rem;
-      color: #C9A84C;
-      opacity: 0.25;
-      line-height: 1;
-      margin-bottom: 20px;
-    }
-    .lp-feature-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.05rem;
-      color: #F5F3EE;
-      margin-bottom: 12px;
-      line-height: 1.3;
-    }
-    .lp-feature-text {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      line-height: 1.8;
-      color: #5A5A65;
-      font-weight: 300;
-    }
-    .lp-feature-gain {
-      margin-top: 20px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #C9A84C;
-      letter-spacing: 0.04em;
-    }
-
-    /* CTA FINAL */
-    .lp-cta {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 100px 48px 88px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-    }
-    .lp-cta-label {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #C9A84C;
-      margin-bottom: 20px;
-    }
-    .lp-cta-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      font-weight: 400;
-      color: #F5F3EE;
-      margin-bottom: 16px;
-      line-height: 1.15;
-    }
-    .lp-cta-title em { font-style: italic; color: #C9A84C; }
-    .lp-cta-sub {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      color: #5A5A65;
-      margin-bottom: 44px;
-      font-weight: 300;
-    }
-
-    .lp-footer {
-      position: relative;
-      z-index: 1;
-      padding: 24px 48px;
-      border-top: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .lp-footer-logo { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: #3A3A45; }
-    .lp-footer-text { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: #2A2A35; }
-
-    @keyframes lpFadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 768px) {
-      .lp-nav { padding: 20px 24px; }
-      .lp-hero { padding: 120px 24px 60px; }
-      .lp-problem { padding: 60px 24px; }
-      .lp-risks { grid-template-columns: 1fr; }
-      .lp-features { grid-template-columns: 1fr; }
-      .lp-feature { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 40px 24px; }
-      .lp-cta { padding: 72px 24px 64px; }
-      .lp-footer { flex-direction: column; gap: 8px; padding: 24px; text-align: center; }
+    .lp-nav { position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:24px 48px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(13,15,20,0.9);backdrop-filter:blur(16px); }
+    .lp-logo { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:500;color:#F5F3EE;letter-spacing:0.02em; }
+    .lp-logo span { color:#C9A84C; }
+    .lp-nav-btn { font-size:0.78rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.3);padding:10px 28px;cursor:pointer;background:transparent;transition:all 0.25s ease;font-family:'DM Sans',sans-serif; }
+    .lp-nav-btn:hover { background:#C9A84C;color:#0D0F14;border-color:#C9A84C; }
+    .lp-hero { position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:140px 48px 80px;max-width:860px; }
+    .lp-eyebrow { font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:#C9A84C;margin-bottom:32px;display:flex;align-items:center;gap:14px;opacity:0;animation:lpFadeUp 0.7s ease 0.1s forwards; }
+    .lp-eyebrow::before { content:'';display:block;width:36px;height:1px;background:#C9A84C;flex-shrink:0; }
+    .lp-title { font-family:'Playfair Display',serif;font-size:clamp(2.6rem,5.5vw,4.8rem);font-weight:400;line-height:1.1;letter-spacing:-0.02em;color:#F5F3EE;margin-bottom:36px;opacity:0;animation:lpFadeUp 0.8s ease 0.25s forwards; }
+    .lp-title em { font-style:italic;color:#C9A84C; }
+    .lp-subtitle { font-family:'DM Sans',sans-serif;font-size:1.05rem;font-weight:300;line-height:1.75;color:#7A7A85;max-width:540px;margin-bottom:20px;opacity:0;animation:lpFadeUp 0.8s ease 0.4s forwards; }
+    .lp-urgence { font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;color:#C9A84C;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-left:3px solid #C9A84C;padding:10px 16px;margin-bottom:44px;max-width:540px;letter-spacing:0.01em;opacity:0;animation:lpFadeUp 0.8s ease 0.5s forwards; }
+    .lp-actions { display:flex;align-items:center;gap:24px;opacity:0;animation:lpFadeUp 0.8s ease 0.6s forwards; }
+    .lp-btn-primary { background:#C9A84C;color:#0D0F14;border:none;padding:17px 44px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.25s ease; }
+    .lp-btn-primary:hover { transform:translateY(-2px);box-shadow:0 10px 36px rgba(201,168,76,0.3); }
+    .lp-btn-link { font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#5A5A65;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:color 0.2s; }
+    .lp-btn-link:hover { color:#F5F3EE; }
+    .lp-problem { position:relative;z-index:1;padding:80px 48px;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(201,168,76,0.03); }
+    .lp-problem-label { font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px; }
+    .lp-problem-title { font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:400;color:#F5F3EE;line-height:1.2;max-width:640px;margin-bottom:40px; }
+    .lp-problem-title em { font-style:italic;color:#C9A84C; }
+    .lp-risks { display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06); }
+    .lp-risk { padding:28px 24px;background:#0D0F14; }
+    .lp-risk-icon { font-size:1.4rem;margin-bottom:12px; }
+    .lp-risk-title { font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:500;color:#F5F3EE;margin-bottom:8px; }
+    .lp-risk-text { font-family:'DM Sans',sans-serif;font-size:0.8rem;line-height:1.65;color:#5A5A65; }
+    .lp-features { position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05); }
+    .lp-feature { padding:52px 40px;border-right:1px solid rgba(255,255,255,0.05); }
+    .lp-feature:last-child { border-right:none; }
+    .lp-feature-num { font-family:'Playfair Display',serif;font-size:2.2rem;color:#C9A84C;opacity:0.25;line-height:1;margin-bottom:20px; }
+    .lp-feature-title { font-family:'Playfair Display',serif;font-size:1.05rem;color:#F5F3EE;margin-bottom:12px;line-height:1.3; }
+    .lp-feature-text { font-family:'DM Sans',sans-serif;font-size:0.85rem;line-height:1.8;color:#5A5A65;font-weight:300; }
+    .lp-feature-gain { margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;color:#C9A84C;letter-spacing:0.04em; }
+    .lp-cta { position:relative;z-index:1;text-align:center;padding:100px 48px 88px;border-top:1px solid rgba(255,255,255,0.05); }
+    .lp-cta-label { font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px; }
+    .lp-cta-title { font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:400;color:#F5F3EE;margin-bottom:16px;line-height:1.15; }
+    .lp-cta-title em { font-style:italic;color:#C9A84C; }
+    .lp-cta-sub { font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#5A5A65;margin-bottom:44px;font-weight:300; }
+    .lp-footer { position:relative;z-index:1;padding:24px 48px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between; }
+    .lp-footer-logo { font-family:'Playfair Display',serif;font-size:0.9rem;color:#3A3A45; }
+    .lp-footer-text { font-family:'DM Sans',sans-serif;font-size:0.75rem;color:#2A2A35; }
+    @keyframes lpFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    @media (max-width:768px) {
+      .lp-nav{padding:20px 24px} .lp-hero{padding:120px 24px 60px} .lp-problem{padding:60px 24px}
+      .lp-risks{grid-template-columns:1fr} .lp-features{grid-template-columns:1fr}
+      .lp-feature{border-right:none;border-bottom:1px solid rgba(255,255,255,0.05);padding:40px 24px}
+      .lp-cta{padding:72px 24px 64px} .lp-footer{flex-direction:column;gap:8px;padding:24px;text-align:center}
     }
   `;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0D0F14', position: 'relative', overflow: 'hidden' }}>
+    <div style={{minHeight:'100vh',background:'#0D0F14',position:'relative',overflow:'hidden'}}>
       <style>{landingStyles}</style>
-
-      {/* Ambient */}
-      <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse 70% 50% at 75% -5%, rgba(201,168,76,0.06) 0%, transparent 55%), radial-gradient(ellipse 40% 30% at -5% 85%, rgba(201,168,76,0.04) 0%, transparent 50%)'
-      }} />
-
-      {/* NAV */}
+      <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:0,background:'radial-gradient(ellipse 70% 50% at 75% -5%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 40% 30% at -5% 85%,rgba(201,168,76,0.04) 0%,transparent 50%)'}} />
       <nav className="lp-nav">
         <div className="lp-logo">Data<span>Remédiation</span></div>
         <button className="lp-nav-btn" onClick={onEnter}>Espace client</button>
       </nav>
-
-      {/* HERO */}
       <section className="lp-hero">
         <div className="lp-eyebrow">Cabinets comptables · Réforme 2026</div>
-        <h1 className="lp-title">
-          Vos clients sont-ils prêts<br />
-          pour la <em>facturation électronique</em> ?
-        </h1>
-        <p className="lp-subtitle">
-          Nous aidons les cabinets à auditer et fiabiliser automatiquement
-          les bases fournisseurs de leurs clients — avant que la réforme
-          ne rende chaque erreur bloquante.
-        </p>
-        <div className="lp-urgence">
-          ⚠ Obligation généralisée dès 2026 · Une base fournisseurs non fiabilisée = des factures rejetées
-        </div>
+        <h1 className="lp-title">Vos clients sont-ils prêts<br />pour la <em>facturation électronique</em> ?</h1>
+        <p className="lp-subtitle">Nous aidons les cabinets à auditer et fiabiliser automatiquement les bases fournisseurs de leurs clients — avant que la réforme ne rende chaque erreur bloquante.</p>
+        <div className="lp-urgence">⚠ Obligation généralisée dès 2026 · Une base fournisseurs non fiabilisée = des factures rejetées</div>
         <div className="lp-actions">
-          <button className="lp-btn-primary" onClick={onEnter}>
-            Accéder à l'espace client
-          </button>
-          <button className="lp-btn-link" onClick={() => document.getElementById('lp-problem')?.scrollIntoView({ behavior: 'smooth' })}>
-            Comprendre l'enjeu →
-          </button>
+          <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
+          <button className="lp-btn-link" onClick={()=>document.getElementById('lp-problem')?.scrollIntoView({behavior:'smooth'})}>Comprendre l'enjeu →</button>
         </div>
       </section>
-
-      {/* PROBLÈME */}
       <section className="lp-problem" id="lp-problem">
         <div className="lp-problem-label">Le problème concret</div>
-        <h2 className="lp-problem-title">
-          Une base fournisseurs non vérifiée,<br />
-          c'est un <em>risque opérationnel immédiat</em>.
-        </h2>
+        <h2 className="lp-problem-title">Une base fournisseurs non vérifiée,<br />c'est un <em>risque opérationnel immédiat</em>.</h2>
         <div className="lp-risks">
           {[
-            { icon: '🚫', title: 'SIRET invalide ou radié', text: "Un fournisseur avec un SIRET incorrect sera rejeté automatiquement par la Plateforme Publique de Facturation. Sans correction préalable, la facture ne passe pas." },
-            { icon: '⚠️', title: 'TVA intracommunautaire erronée', text: "Un numéro de TVA non validé sur VIES bloque la déductibilité. Le cabinet engage sa responsabilité si l'erreur n'est pas détectée en amont." },
-            { icon: '📋', title: 'Données manquantes ou doublons', text: "Des champs obligatoires absents ou des doublons dans la base ralentissent le traitement et multiplient les rejets en cascade dès la mise en conformité." },
-          ].map((r, i) => (
+            {icon:'🚫',title:'SIRET invalide ou radié',text:"Un fournisseur avec un SIRET incorrect sera rejeté automatiquement par la Plateforme Publique de Facturation. Sans correction préalable, la facture ne passe pas."},
+            {icon:'⚠️',title:'TVA intracommunautaire erronée',text:"Un numéro de TVA non validé sur VIES bloque la déductibilité. Le cabinet engage sa responsabilité si l'erreur n'est pas détectée en amont."},
+            {icon:'📋',title:'Données manquantes ou doublons',text:"Des champs obligatoires absents ou des doublons dans la base ralentissent le traitement et multiplient les rejets en cascade dès la mise en conformité."},
+          ].map((r,i)=>(
             <div className="lp-risk" key={i}>
               <div className="lp-risk-icon">{r.icon}</div>
               <div className="lp-risk-title">{r.title}</div>
@@ -428,29 +145,12 @@ function LandingPage({ onEnter }) {
           ))}
         </div>
       </section>
-
-      {/* CE QU'ON FAIT */}
       <section className="lp-features" id="lp-features">
         {[
-          {
-            n: '01',
-            title: 'Audit automatique de la base fournisseurs',
-            text: "Importez le fichier fournisseurs de votre client. En quelques minutes, chaque ligne est contrôlée : SIRET actif, TVA valide, cohérence des données, doublons détectés.",
-            gain: '→ Gain : 0 heure de vérification manuelle'
-          },
-          {
-            n: '02',
-            title: 'Rapport de conformité prêt à livrer',
-            text: "Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF ou Excel — directement transmissible au client.",
-            gain: '→ Gain : un livrable professionnel en un clic'
-          },
-          {
-            n: '03',
-            title: 'Traçabilité complète pour le cabinet',
-            text: "Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validée — pour vos obligations de conseil et votre couverture juridique.",
-            gain: '→ Gain : preuve de diligence horodatée'
-          },
-        ].map(f => (
+          {n:'01',title:'Audit automatique de la base fournisseurs',text:"Importez le fichier fournisseurs de votre client. En quelques minutes, chaque ligne est contrôlée : SIRET actif, TVA valide, cohérence des données, doublons détectés.",gain:'→ Gain : 0 heure de vérification manuelle'},
+          {n:'02',title:'Rapport de conformité prêt à livrer',text:"Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF ou Excel — directement transmissible au client.",gain:'→ Gain : un livrable professionnel en un clic'},
+          {n:'03',title:'Traçabilité complète pour le cabinet',text:"Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validée — pour vos obligations de conseil et votre couverture juridique.",gain:'→ Gain : preuve de diligence horodatée'},
+        ].map(f=>(
           <div className="lp-feature" key={f.n}>
             <div className="lp-feature-num">{f.n}</div>
             <div className="lp-feature-title">{f.title}</div>
@@ -459,23 +159,12 @@ function LandingPage({ onEnter }) {
           </div>
         ))}
       </section>
-
-      {/* CTA FINAL */}
       <section className="lp-cta">
         <div className="lp-cta-label">Prendre de l'avance</div>
-        <h2 className="lp-cta-title">
-          Le bon moment, c'est<br />
-          <em>avant</em> que la réforme s'applique.
-        </h2>
-        <p className="lp-cta-sub">
-          Accédez à votre espace pour auditer la première base fournisseurs de vos clients.
-        </p>
-        <button className="lp-btn-primary" onClick={onEnter}>
-          Accéder à l'espace client
-        </button>
+        <h2 className="lp-cta-title">Le bon moment, c'est<br /><em>avant</em> que la réforme s'applique.</h2>
+        <p className="lp-cta-sub">Accédez à votre espace pour auditer la première base fournisseurs de vos clients.</p>
+        <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
       </section>
-
-      {/* FOOTER */}
       <footer className="lp-footer">
         <div className="lp-footer-logo">DataRemédiation</div>
         <div className="lp-footer-text">© 2026 · Conçu pour les cabinets comptables</div>
@@ -496,8 +185,6 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const resetToken = params.get('token');
     if (resetToken) { setScreen('reset-password'); return; }
-
-    // Afficher la landing sur "/"
     if (window.location.pathname === '/' && !params.get('paid')) {
       restoreSession().then(u => {
         if (u) { setUser(u); setScreen('dashboard'); }
@@ -509,7 +196,6 @@ export default function App() {
         else    setScreen('login');
       });
     }
-
     const handler = () => { setUser(null); setFiles([]); setScreen('landing'); };
     window.addEventListener('auth:logout', handler);
     return () => window.removeEventListener('auth:logout', handler);
@@ -644,12 +330,9 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
       <div style={{position:'fixed',inset:0,backgroundImage:`linear-gradient(${P.border} 1px,transparent 1px),linear-gradient(90deg,${P.border} 1px,transparent 1px)`,backgroundSize:'60px 60px',opacity:.4,pointerEvents:'none'}} />
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,pointerEvents:'none'}} />
-
-        {/* Bouton retour landing */}
         <button onClick={onBack} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,marginBottom:20,display:'flex',alignItems:'center',gap:4,fontFamily:"'JetBrains Mono',monospace"}}>
           ← Retour à l'accueil
         </button>
-
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:48,height:48,borderRadius:10,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:22,marginBottom:12}}>⚡</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
@@ -715,7 +398,7 @@ function ForgotPasswordScreen({ onBack }) {
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ email }),
       });
       if (!res.ok) throw new Error('Erreur serveur');
@@ -773,7 +456,7 @@ function ResetPasswordScreen({ onSuccess }) {
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
@@ -832,7 +515,7 @@ function AbonnementsPanel({ user, onClose }) {
           <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>✕ Fermer</button>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginTop:24}}>
-          {ABONNEMENTS.map((a, i) => (
+          {ABONNEMENTS.map((a,i)=>(
             <div key={i} className="card" style={{padding:20,border:`1px solid ${a.color}30`,display:'flex',flexDirection:'column',gap:12}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
                 <div>
@@ -842,16 +525,16 @@ function AbonnementsPanel({ user, onClose }) {
                 <div style={{background:`${a.color}15`,border:`1px solid ${a.color}30`,borderRadius:6,padding:'4px 8px',fontSize:10,color:a.color,fontWeight:700,whiteSpace:'nowrap'}}>{a.prix}</div>
               </div>
               <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
-                {a.features.map((feat, j) => (
+                {a.features.map((feat,j)=>(
                   <div key={j} style={{display:'flex',alignItems:'center',gap:6,fontSize:10,color:P.chrome}}>
                     <span style={{color:a.color,fontSize:12}}>✓</span>{feat}
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => { window.location.href = `${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`; }}
-                style={{width:'100%',background:a.color,color:'#000',fontWeight:700,padding:'10px',borderRadius:'6px',fontSize:'11px',letterSpacing:'.06em',textTransform:'uppercase',border:'none',cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4}}
-              >→ S'abonner</button>
+              <button onClick={()=>{window.location.href=`${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`;}}
+                style={{width:'100%',background:a.color,color:'#000',fontWeight:700,padding:'10px',borderRadius:'6px',fontSize:'11px',letterSpacing:'.06em',textTransform:'uppercase',border:'none',cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>
+                → S'abonner
+              </button>
             </div>
           ))}
         </div>
@@ -884,8 +567,8 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
   if (nbCredits > 0) {
     return (
       <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
-        <span style={{color:P.accent,fontWeight:700}}>💳 {nbCredits} crédit{nbCredits > 1 ? 's' : ''}</span>
-        <span style={{color:P.muted}}>disponible{nbCredits > 1 ? 's' : ''}</span>
+        <span style={{color:P.accent,fontWeight:700}}>💳 {nbCredits} crédit{nbCredits>1?'s':''}</span>
+        <span style={{color:P.muted}}>disponible{nbCredits>1?'s':''}</span>
       </div>
     );
   }
@@ -897,7 +580,8 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
 }
 
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
-  const [showAbonnements, setShowAbonnements] = useState(false);
+  const [showAbonnements,   setShowAbonnements]   = useState(false);
+  const [showRectification, setShowRectification] = useState(false);
   const [credits, setCredits] = useState(null);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
@@ -914,7 +598,9 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-      {showAbonnements && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
+      {showAbonnements   && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
+      {showRectification && <RectificationPanel onClose={()=>setShowRectification(false)} />}
+
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
@@ -928,6 +614,9 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           {!isAdmin && <CreditsWidget credits={credits} onOpenAbonnements={()=>setShowAbonnements(true)} />}
+          <button onClick={()=>setShowRectification(true)} style={{background:`${P.blue}15`,border:`1px solid ${P.blue}30`,color:P.blue,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
+            ⚡ Rectifier
+          </button>
           <button onClick={()=>setShowAbonnements(true)} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
             📅 Abonnements
           </button>
@@ -959,25 +648,25 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           <div>
             {showUpload ? (
               <UploadZone user={user} isAdmin={isAdmin} credits={credits}
-                onDone={async () => { setShowUpload(false); await onReload(); getCredits().then(setCredits).catch(()=>{}); }}
-                onCancel={() => setShowUpload(false)} />
+                onDone={async()=>{setShowUpload(false);await onReload();getCredits().then(setCredits).catch(()=>{});}}
+                onCancel={()=>setShowUpload(false)} />
             ) : (
               <>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600}}>Mes fichiers</div>
                   <button className="btn-primary" onClick={()=>setShowUpload(true)} style={{fontSize:11,padding:'9px 20px'}}>+ Nouveau fichier</button>
                 </div>
-                {files.length === 0 ? (
+                {files.length===0 ? (
                   <EmptyState onUpload={()=>setShowUpload(true)} />
                 ) : (
                   <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                    {files.map(f => (
+                    {files.map(f=>(
                       <FileRow key={f.id} file={f}
                         isActive={activeFile?.id===f.id}
-                        onClick={() => setActiveFile(activeFile?.id===f.id ? null : f)}
-                        onDelete={async () => {
+                        onClick={()=>setActiveFile(activeFile?.id===f.id?null:f)}
+                        onDelete={async()=>{
                           await deleteFile(f.id).catch(()=>{});
-                          if (activeFile?.id===f.id) setActiveFile(null);
+                          if(activeFile?.id===f.id) setActiveFile(null);
                           onReload();
                         }} />
                     ))}
@@ -987,7 +676,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
             )}
           </div>
           {activeFile && !showUpload && (
-            <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} userPlan={user?.plan || 'basic'} />
+            <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} userPlan={user?.plan||'basic'} />
           )}
         </div>
       </div>
@@ -1009,13 +698,13 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('paid') === 'true') {
+    if (params.get('paid')==='true') {
       setPaid(true);
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  const hasCredits = isAdmin || (credits && (credits.credits > 0 || credits.abonnement));
+  const hasCredits = isAdmin || (credits && (credits.credits>0 || credits.abonnement));
   const canUpload  = isAdmin || paid || hasCredits;
 
   const handle = (f) => {
@@ -1027,35 +716,35 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
 
   const detectFournisseurs = (f) => {
     setDetecting(true);
-    const ext = '.' + f.name.split('.').pop().toLowerCase();
-    if (ext === '.csv') {
+    const ext = '.'+f.name.split('.').pop().toLowerCase();
+    if (ext==='.csv') {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const lines = e.target.result.split('\n').filter(l => l.trim()).length;
-        setNbFournisseurs(Math.max(0, lines - 1));
+        const lines = e.target.result.split('\n').filter(l=>l.trim()).length;
+        setNbFournisseurs(Math.max(0,lines-1));
         setDetecting(false);
       };
       reader.readAsText(f);
-    } else if (ext === '.xlsx' || ext === '.xls') {
+    } else if (ext==='.xlsx'||ext==='.xls') {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const workbook = XLSX.read(e.target.result, { type: 'array' });
+          const workbook = XLSX.read(e.target.result, {type:'array'});
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(sheet);
           setNbFournisseurs(rows.length);
-        } catch { setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3))); }
+        } catch { setNbFournisseurs(Math.max(1,Math.round(f.size/1024*3))); }
         setDetecting(false);
       };
       reader.readAsArrayBuffer(f);
     } else {
-      setNbFournisseurs(Math.max(1, Math.round(f.size / 1024 * 3)));
+      setNbFournisseurs(Math.max(1,Math.round(f.size/1024*3)));
       setDetecting(false);
     }
   };
 
   const upload = async () => {
-    if (!file || !canUpload) return;
+    if (!file||!canUpload) return;
     setUploading(true); setError('');
     try {
       await uploadFile(file, setProgress, nbFournisseurs);
@@ -1068,11 +757,10 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
-          {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>MODE DÉMO</span>}
+          {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>MODE DEMO</span>}
         </div>
-        <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>✕ Annuler</button>
+        <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>x Annuler</button>
       </div>
-
       <div
         className={dragging?'drop-active':''}
         onClick={()=>inputRef.current?.click()}
@@ -1083,45 +771,45 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
       >
         <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls,.pdf" onChange={e=>{if(e.target.files[0])handle(e.target.files[0])}} style={{display:'none'}} />
         {file ? (
-          <><div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
-          <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
-          <div style={{fontSize:11,color:P.muted}}>
-            {fmtSize(file.size)}
-            {detecting ? ' · Analyse en cours…' : nbFournisseurs > 0 ? ` · ${nbFournisseurs} fournisseurs détectés` : ''}
-          </div></>
+          <>
+            <div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
+            <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
+            <div style={{fontSize:11,color:P.muted}}>
+              {fmtSize(file.size)}
+              {detecting?' · Analyse en cours…':nbFournisseurs>0?` · ${nbFournisseurs} fournisseurs detectes`:''}
+            </div>
+          </>
         ) : (
-          <><div style={{fontSize:36,marginBottom:10,color:P.dim}}>⊕</div>
-          <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-déposer ou cliquer</div>
-          <div style={{fontSize:11,color:P.muted}}>CSV · XLSX · XLS · PDF — max {MAX_SIZE_MB} Mo</div></>
+          <>
+            <div style={{fontSize:36,marginBottom:10,color:P.dim}}>+</div>
+            <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-deposer ou cliquer</div>
+            <div style={{fontSize:11,color:P.muted}}>CSV · XLSX · XLS · PDF — max {MAX_SIZE_MB} Mo</div>
+          </>
         )}
       </div>
-
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:12}}>
-        {[['🔒','Chiffrement TLS en transit'],['🗑️','Suppression auto 48h'],['🔏','Pseudo avant IA'],['🌐','Backend sécurisé — clé cachée']].map(([i,l],k)=>(
+        {[['🔒','Chiffrement TLS en transit'],['🗑️','Suppression auto 48h'],['🔏','Pseudo avant IA'],['🌐','Backend securise — cle cachee']].map(([i,l],k)=>(
           <div key={k} style={{display:'flex',alignItems:'center',gap:6,background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',fontSize:10,color:P.muted}}><span style={{fontSize:13}}>{i}</span>{l}</div>
         ))}
       </div>
-
-      {errs.length>0 && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12}}>{errs.map((e,i)=><div key={i} style={{fontSize:11,color:P.danger}}>✗ {e}</div>)}</div>}
-      {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12,fontSize:11,color:P.danger}}>✗ {error}</div>}
-
+      {errs.length>0 && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12}}>{errs.map((e,i)=><div key={i} style={{fontSize:11,color:P.danger}}>x {e}</div>)}</div>}
+      {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12,fontSize:11,color:P.danger}}>x {error}</div>}
       {uploading && (
         <div style={{marginTop:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:P.muted,marginBottom:5}}><span>Upload sécurisé…</span><span>{progress}%</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:P.muted,marginBottom:5}}><span>Upload securise…</span><span>{progress}%</span></div>
           <div style={{height:3,background:P.border,borderRadius:2,overflow:'hidden'}}>
             <div style={{height:'100%',width:`${progress}%`,background:`linear-gradient(90deg,${P.accent},${P.blue})`,transition:'width .15s'}} />
           </div>
         </div>
       )}
-
-      {file && errs.length === 0 && !uploading && !detecting && (
+      {file && errs.length===0 && !uploading && !detecting && (
         <div style={{marginTop:16}}>
           {canUpload ? (
             <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-              <span style={{fontSize:18}}>{isAdmin ? '🔑' : '✅'}</span>
+              <span style={{fontSize:18}}>{isAdmin?'🔑':'✅'}</span>
               <div>
                 <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>
-                  {isAdmin ? 'Accès démo — paiement bypassed' : hasCredits ? 'Crédit disponible — prêt à analyser' : 'Paiement confirmé'}
+                  {isAdmin?'Acces demo — paiement bypassed':hasCredits?'Credit disponible — pret a analyser':'Paiement confirme'}
                 </div>
                 <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
               </div>
@@ -1129,33 +817,26 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
           ) : (
             <>
               <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
-                Étape 1 — Payer pour activer le traitement
+                Etape 1 — Payer pour activer le traitement
               </div>
               <PaymentButton userEmail={user?.email} fileName={file.name} nbFournisseurs={nbFournisseurs} />
             </>
           )}
         </div>
       )}
-
       {file && detecting && (
         <div style={{marginTop:16,textAlign:'center',fontSize:11,color:P.muted}}>
-          <span className="spin" style={{marginRight:6}}>⟳</span>Analyse du fichier…
+          <span style={{marginRight:6}}>⟳</span>Analyse du fichier…
         </div>
       )}
-
       <button className="btn-primary" onClick={upload}
-        disabled={!file || errs.length > 0 || uploading || !canUpload || detecting}
-        style={{marginTop:10,width:'100%',opacity:(!canUpload && file && !detecting) ? 0.35 : 1}}
-      >
-        {uploading ? <><span className="spin">⟳</span> Upload en cours…</>
-         : detecting ? '⟳ Analyse du fichier…'
-         : !canUpload && file ? '🔒 Paiement requis avant l\'import'
-         : '↑ Importer et analyser'}
+        disabled={!file||errs.length>0||uploading||!canUpload||detecting}
+        style={{marginTop:10,width:'100%',opacity:(!canUpload&&file&&!detecting)?0.35:1}}>
+        {uploading?'⟳ Upload en cours…':detecting?'⟳ Analyse du fichier…':!canUpload&&file?'🔒 Paiement requis':'Importer et analyser'}
       </button>
-
       {!canUpload && file && !detecting && (
         <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
-          Effectuez le paiement ci-dessus pour débloquer l'import
+          Effectuez le paiement ci-dessus pour debloquer l'import
         </div>
       )}
     </div>
@@ -1184,7 +865,7 @@ function FileRow({ file, isActive, onClick, onDelete }) {
         <div className={`tag ${st.pulse?'pulse':''}`} style={{background:`${st.color}15`,color:st.color,border:`1px solid ${st.color}30`,flexShrink:0}}>
           <span>{st.icon}</span>{st.label}
         </div>
-        <button className="btn-danger" onClick={e=>{e.stopPropagation();onDelete();}} style={{padding:'5px 10px',fontSize:10,flexShrink:0}}>✕</button>
+        <button className="btn-danger" onClick={e=>{e.stopPropagation();onDelete();}} style={{padding:'5px 10px',fontSize:10,flexShrink:0}}>x</button>
       </div>
       {file.status==='analyzing' && (
         <div style={{marginTop:10,height:2,background:P.border,borderRadius:1,overflow:'hidden'}}>
@@ -1193,7 +874,7 @@ function FileRow({ file, isActive, onClick, onDelete }) {
       )}
       {file.status==='error' && file.error_message && (
         <div style={{marginTop:8,fontSize:10,color:P.danger,paddingTop:8,borderTop:`1px solid ${P.border}`,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-          ✗ Analyse échouée — cliquez pour voir le rapport
+          x Analyse echouee — cliquez pour voir le rapport
         </div>
       )}
     </div>
@@ -1222,7 +903,7 @@ function ReportPanel({ file, onClose, userPlan }) {
       if (typeof raw === 'object') return raw;
       const str = String(raw);
       const jsonStart = str.indexOf('{');
-      if (jsonStart === -1) return {};
+      if (jsonStart===-1) return {};
       return JSON.parse(str.slice(jsonStart));
     } catch(e) { return {}; }
   };
@@ -1230,54 +911,56 @@ function ReportPanel({ file, onClose, userPlan }) {
   const data    = parseSummary();
   const results = data.results || [];
   const summary = data.summary || {};
-  const isDone  = file.status === 'done' || results.length > 0;
+  const isDone  = file.status==='done' || results.length>0;
 
   const counts = {
     all:      results.length,
-    conforme: results.filter(r => (r.statut||'').includes('Conforme')).length,
-    corriger: results.filter(r => (r.statut||'').includes('corriger')).length,
-    bloquant: results.filter(r => (r.statut||'').includes('Bloquant')).length,
+    conforme: results.filter(r=>(r.statut||'').includes('Conforme')).length,
+    corriger: results.filter(r=>(r.statut||'').includes('corriger')).length,
+    bloquant: results.filter(r=>(r.statut||'').includes('Bloquant')).length,
   };
 
   const filtered = results.filter(r => {
-    const matchFilter = filter === 'all' ||
-      (filter === 'conforme' && (r.statut||'').includes('Conforme')) ||
-      (filter === 'corriger' && (r.statut||'').includes('corriger')) ||
-      (filter === 'bloquant' && (r.statut||'').includes('Bloquant'));
+    const matchFilter = filter==='all'||
+      (filter==='conforme'&&(r.statut||'').includes('Conforme'))||
+      (filter==='corriger'&&(r.statut||'').includes('corriger'))||
+      (filter==='bloquant'&&(r.statut||'').includes('Bloquant'));
     const q = search.toLowerCase();
-    const matchSearch = !q || (r.alias||'').toLowerCase().includes(q) || (r.nom_reel||'').toLowerCase().includes(q);
+    const matchSearch = !q||(r.alias||'').toLowerCase().includes(q)||(r.nom_reel||'').toLowerCase().includes(q);
     return matchFilter && matchSearch;
   });
 
   const getTag = (statut='') => {
-    if (statut.includes('Conforme')) return { bg:`${P.accent}15`, color:P.accent, border:`${P.accent}30`, icon:'✓', label:'Conforme' };
-    if (statut.includes('corriger')) return { bg:`${P.warn}15`,   color:P.warn,   border:`${P.warn}30`,   icon:'⚠', label:'À corriger' };
-    return                                  { bg:`${P.danger}15`, color:P.danger, border:`${P.danger}30`, icon:'✗', label:'Bloquant' };
+    if (statut.includes('Conforme')) return {bg:`${P.accent}15`,color:P.accent,border:`${P.accent}30`,icon:'✓',label:'Conforme'};
+    if (statut.includes('corriger')) return {bg:`${P.warn}15`,color:P.warn,border:`${P.warn}30`,icon:'⚠',label:'A corriger'};
+    return {bg:`${P.danger}15`,color:P.danger,border:`${P.danger}30`,icon:'x',label:'Bloquant'};
   };
 
   return (
     <div className="fadeUp card" style={{padding:20,position:'sticky',top:80,maxHeight:'calc(100vh - 100px)',overflowY:'auto'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport détaillé</div>
-        <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>✕</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:600}}>Rapport detaille</div>
+        <button className="btn-ghost" onClick={onClose} style={{fontSize:10,padding:'4px 10px'}}>x</button>
       </div>
-
       <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
         <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
         <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
-        {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Terminé {fmtDate(file.completed_at)}</div>}
+        {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Termine {fmtDate(file.completed_at)}</div>}
       </div>
-
       {!isDone ? (
         <div style={{textAlign:'center',padding:'32px 0'}}>
           {file.status==='error' ? (
-            <><div style={{fontSize:28,marginBottom:8,color:P.danger}}>✗</div>
-            <div style={{color:P.danger,fontSize:12}}>Analyse échouée</div>
-            <div style={{fontSize:10,color:P.muted,marginTop:8}}>Réessayez en important un nouveau fichier</div></>
+            <>
+              <div style={{fontSize:28,marginBottom:8,color:P.danger}}>x</div>
+              <div style={{color:P.danger,fontSize:12}}>Analyse echouee</div>
+              <div style={{fontSize:10,color:P.muted,marginTop:8}}>Reessayez en important un nouveau fichier</div>
+            </>
           ) : (
-            <><div className="spin" style={{fontSize:28,marginBottom:8,color:P.warn}}>◎</div>
-            <div style={{color:P.warn,fontSize:12}}>Analyse en cours…</div>
-            <div style={{fontSize:10,color:P.muted,marginTop:4}}>Pseudo · Validation · IA Claude</div></>
+            <>
+              <div style={{fontSize:28,marginBottom:8,color:P.warn}}>◎</div>
+              <div style={{color:P.warn,fontSize:12}}>Analyse en cours…</div>
+              <div style={{fontSize:10,color:P.muted,marginTop:4}}>Pseudo · Validation · IA Claude</div>
+            </>
           )}
         </div>
       ) : (
@@ -1285,8 +968,8 @@ function ReportPanel({ file, onClose, userPlan }) {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             {[
               ['Total',      counts.all,      P.blue],
-              ['Taux',       `${summary.taux !== undefined ? summary.taux : file.taux_conformite || 0}%`, P.accent],
-              ['À corriger', counts.corriger, P.warn],
+              ['Taux',       `${summary.taux!==undefined?summary.taux:file.taux_conformite||0}%`, P.accent],
+              ['A corriger', counts.corriger, P.warn],
               ['Bloquants',  counts.bloquant, P.danger],
             ].map(([l,v,c],i)=>(
               <div key={i} style={{background:P.surface,border:`1px solid ${c}20`,borderRadius:8,padding:'10px 12px'}}>
@@ -1295,67 +978,63 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             ))}
           </div>
-
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
-            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Téléchargements sécurisés</div>
-            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
+            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargements securises</div>
+            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>x {error}</div>}
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {results.length > 0 && (
+              {results.length>0 && (
                 <button onClick={()=>getLink('csv')} disabled={loading==='csv'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.accent}12`,border:`1px solid ${P.accent}30`,borderRadius:7,padding:'10px 14px',color:P.accent,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-                  {loading==='csv' ? <span className="spin">⟳</span> : <span>↓</span>}
+                  {loading==='csv'?'⟳':'↓'}
                   <div style={{flex:1,textAlign:'left'}}>
-                    <div style={{fontWeight:600}}>Fichier Excel corrigé</div>
-                    <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>XLSX · Données nettoyées · Lien 15 min</div>
+                    <div style={{fontWeight:600}}>Fichier Excel corrige</div>
+                    <div style={{fontSize:9,color:P.accentDim,marginTop:1}}>XLSX · Donnees nettoyees · Lien 15 min</div>
                   </div>
                 </button>
               )}
               <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-                {loading==='pdf' ? <span className="spin">⟳</span> : <span>↓</span>}
+                {loading==='pdf'?'⟳':'↓'}
                 <div style={{flex:1,textAlign:'left'}}>
                   <div style={{fontWeight:600}}>Rapport PDF complet</div>
-                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformité e-Invoicing · Lien 15 min</div>
+                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing · Lien 15 min</div>
                 </div>
               </button>
             </div>
-            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
+            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signes JWT · 15 min · Via backend securise</div>
           </div>
-
-          {results.length > 0 && (
+          {results.length>0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
-                Détail par fournisseur
+                Detail par fournisseur
                 <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:8}}>({results.length})</span>
               </div>
-              <input
-                style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
-                placeholder="Rechercher nom ou alias…" value={search} onChange={e=>setSearch(e.target.value)}
-              />
+              <input style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
+                placeholder="Rechercher nom ou alias…" value={search} onChange={e=>setSearch(e.target.value)} />
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
                   ['all',      `Tous (${counts.all})`,             P.chrome],
                   ['conforme', `✓ Conformes (${counts.conforme})`, P.accent],
                   ['corriger', `⚠ Corriger (${counts.corriger})`,  P.warn],
-                  ['bloquant', `✗ Bloquants (${counts.bloquant})`, P.danger],
+                  ['bloquant', `x Bloquants (${counts.bloquant})`, P.danger],
                 ].map(([key,label,color])=>(
                   <button key={key} onClick={()=>setFilter(key)} style={{
-                    background: filter===key ? `${color}15` : 'transparent',
-                    border: `1px solid ${filter===key ? color+'50' : P.border}`,
-                    color: filter===key ? color : P.muted,
+                    background:filter===key?`${color}15`:'transparent',
+                    border:`1px solid ${filter===key?color+'50':P.border}`,
+                    color:filter===key?color:P.muted,
                     padding:'3px 9px',borderRadius:4,fontSize:10,cursor:'pointer',
                     fontFamily:"'JetBrains Mono',monospace",transition:'all .15s'
                   }}>{label}</button>
                 ))}
               </div>
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                {filtered.length === 0 ? (
-                  <div style={{textAlign:'center',padding:'20px 0',color:P.muted,fontSize:11}}>Aucun résultat</div>
-                ) : filtered.map((r,i) => {
+                {filtered.length===0 ? (
+                  <div style={{textAlign:'center',padding:'20px 0',color:P.muted,fontSize:11}}>Aucun resultat</div>
+                ) : filtered.map((r,i)=>{
                   const tag = getTag(r.statut||'');
                   return (
                     <div key={i} style={{background:P.surface,border:`1px solid ${tag.border}`,borderRadius:8,padding:'10px 12px',borderLeft:`3px solid ${tag.color}`}}>
                       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:6}}>
                         <div style={{minWidth:0}}>
-                          <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.nom_reel || r.alias}</div>
+                          <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.nom_reel||r.alias}</div>
                           <div style={{fontSize:10,color:P.muted,marginTop:1}}>{r.alias}</div>
                         </div>
                         <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',flexShrink:0}}>
@@ -1363,12 +1042,12 @@ function ReportPanel({ file, onClose, userPlan }) {
                         </span>
                       </div>
                       <div style={{display:'flex',gap:10,marginBottom:4}}>
-                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'✗'} SIRET/SIREN</span>
-                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'✗'} TVA</span>
-                        {r.siren_coherent === false && <span style={{fontSize:10,color:P.danger}}>✗ SIREN incohérent</span>}
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'x'} SIRET/SIREN</span>
+                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'x'} TVA</span>
+                        {r.siren_coherent===false && <span style={{fontSize:10,color:P.danger}}>x SIREN incoherent</span>}
                       </div>
                       {(r.erreurs||[]).map((e,j)=>(
-                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>✗ {e}</div>
+                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>x {e}</div>
                       ))}
                       {r.suggestion && (
                         <div style={{fontSize:10,color:r.statut?.includes('Conforme')?P.accent:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
@@ -1391,11 +1070,9 @@ function EmptyState({ onUpload }) {
   return (
     <div className="card fadeUp" style={{padding:'60px 40px',textAlign:'center',borderStyle:'dashed'}}>
       <div style={{fontSize:48,marginBottom:16,color:P.dim}}>⊙</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,marginBottom:8}}>Aucun fichier importé</div>
-      <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>Importez vos fichiers fournisseurs pour démarrer<br/>un audit de conformité e-Invoicing 2026.</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,marginBottom:8}}>Aucun fichier importe</div>
+      <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>Importez vos fichiers fournisseurs pour demarrer<br/>un audit de conformite e-Invoicing 2026.</div>
       <button className="btn-primary" onClick={onUpload}>+ Importer un premier fichier</button>
     </div>
   );
 }
-
-    
