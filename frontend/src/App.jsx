@@ -1,9 +1,4 @@
-    // frontend/src/App.jsx
-import LandingPage from './pages/LandingPage';
-
-// Dans ton <Routes> :
-<Route path="/" element={<LandingPage />} />
-import { useState, useEffect, useRef, useCallback } from 'react';
+    import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
   register, login, logout,
@@ -60,6 +55,338 @@ const STATUS_CFG = {
   error:     { label:'Erreur',     color:'#ff4566', icon:'✗', pulse:false },
 };
 
+// ── LANDING PAGE ──────────────────────────────────────────────────────────────
+function LandingPage({ onEnter }) {
+  const landingStyles = `
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+    .lp-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(13,15,20,0.85);
+      backdrop-filter: blur(12px);
+    }
+    .lp-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #F5F3EE;
+      letter-spacing: 0.02em;
+    }
+    .lp-logo span { color: #C9A84C; }
+    .lp-nav-btn {
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #C9A84C;
+      border: 1px solid rgba(201,168,76,0.25);
+      padding: 10px 24px;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.25s ease;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .lp-nav-btn:hover { background: #C9A84C; color: #0D0F14; border-color: #C9A84C; }
+    .lp-hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 140px 48px 80px;
+      max-width: 900px;
+    }
+    .lp-eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #C9A84C;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      animation: lpFadeUp 0.7s ease 0.1s forwards;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .lp-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: #C9A84C;
+    }
+    .lp-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 400;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #F5F3EE;
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: lpFadeUp 0.8s ease 0.25s forwards;
+    }
+    .lp-title em { font-style: italic; color: #C9A84C; }
+    .lp-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 300;
+      line-height: 1.7;
+      color: #6B6B72;
+      max-width: 520px;
+      margin-bottom: 52px;
+      opacity: 0;
+      animation: lpFadeUp 0.8s ease 0.4s forwards;
+    }
+    .lp-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+      animation: lpFadeUp 0.8s ease 0.55s forwards;
+    }
+    .lp-btn-primary {
+      background: #C9A84C;
+      color: #0D0F14;
+      border: none;
+      padding: 16px 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .lp-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(201,168,76,0.3); }
+    .lp-btn-link {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      color: #6B6B72;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+    .lp-btn-link:hover { color: #F5F3EE; }
+    .lp-features {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+    }
+    .lp-feature {
+      padding: 48px 40px;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .lp-feature:last-child { border-right: none; }
+    .lp-feature-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      color: #C9A84C;
+      opacity: 0.3;
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+    .lp-feature-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: #F5F3EE;
+      margin-bottom: 12px;
+    }
+    .lp-feature-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: #6B6B72;
+      font-weight: 300;
+    }
+    .lp-compliance {
+      position: relative;
+      z-index: 1;
+      padding: 80px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 48px;
+    }
+    .lp-compliance-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #C9A84C;
+      margin-bottom: 16px;
+    }
+    .lp-compliance-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+      font-weight: 400;
+      color: #F5F3EE;
+      max-width: 480px;
+      line-height: 1.25;
+    }
+    .lp-badges { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+    .lp-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border: 1px solid rgba(201,168,76,0.2);
+      background: rgba(201,168,76,0.04);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      color: #F5F3EE;
+    }
+    .lp-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #C9A84C; flex-shrink: 0; }
+    .lp-cta {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 96px 48px 80px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .lp-cta-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 400;
+      color: #F5F3EE;
+      margin-bottom: 16px;
+    }
+    .lp-cta-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: #6B6B72;
+      margin-bottom: 40px;
+    }
+    .lp-footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px 48px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lp-footer-logo { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: #4a5878; }
+    .lp-footer-text { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: rgba(107,107,114,0.5); }
+    @keyframes lpFadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      .lp-nav { padding: 20px 24px; }
+      .lp-hero { padding: 120px 24px 60px; }
+      .lp-features { grid-template-columns: 1fr; }
+      .lp-feature { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 36px 24px; }
+      .lp-compliance { flex-direction: column; padding: 60px 24px; align-items: flex-start; }
+      .lp-cta { padding: 72px 24px 60px; }
+      .lp-footer { flex-direction: column; gap: 8px; padding: 24px; text-align: center; }
+    }
+  `;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0D0F14', position: 'relative', overflow: 'hidden' }}>
+      <style>{landingStyles}</style>
+
+      {/* Ambient glow */}
+      <div style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(ellipse 80% 60% at 70% -10%, rgba(201,168,76,0.07) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at -10% 80%, rgba(201,168,76,0.04) 0%, transparent 50%)'
+      }} />
+
+      {/* NAV */}
+      <nav className="lp-nav">
+        <div className="lp-logo">Data<span>Remédiation</span></div>
+        <button className="lp-nav-btn" onClick={onEnter}>Accéder</button>
+      </nav>
+
+      {/* HERO */}
+      <section className="lp-hero">
+        <div className="lp-eyebrow">Agent IA · e-Facturation B2B</div>
+        <h1 className="lp-title">
+          La conformité facture,<br />
+          <em>automatisée.</em>
+        </h1>
+        <p className="lp-subtitle">
+          DataRemédiation analyse, corrige et valide vos flux de facturation électronique
+          avant transmission. Conçu pour les cabinets comptables et leurs clients.
+        </p>
+        <div className="lp-actions">
+          <button className="lp-btn-primary" onClick={onEnter}>
+            Accéder à l'espace client
+          </button>
+          <button className="lp-btn-link" onClick={() => document.getElementById('lp-features')?.scrollIntoView({ behavior: 'smooth' })}>
+            En savoir plus →
+          </button>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="lp-features" id="lp-features">
+        {[
+          { n: '01', title: 'Détection intelligente', text: "L'agent identifie automatiquement les anomalies dans vos factures : TVA incorrecte, mentions obligatoires manquantes, SIRET invalide." },
+          { n: '02', title: 'Remédiation assistée',   text: 'Chaque anomalie est expliquée et corrigée avec suggestion de modification. La validation humaine est préservée pour chaque décision.' },
+          { n: '03', title: 'Traçabilité complète',   text: "Historique d'audit détaillé pour chaque facture traitée. Exportable à tout moment pour vos dossiers de conformité." },
+        ].map(f => (
+          <div className="lp-feature" key={f.n}>
+            <div className="lp-feature-num">{f.n}</div>
+            <div className="lp-feature-title">{f.title}</div>
+            <p className="lp-feature-text">{f.text}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* COMPLIANCE */}
+      <section className="lp-compliance">
+        <div>
+          <div className="lp-compliance-label">Conformité réglementaire</div>
+          <h2 className="lp-compliance-title">
+            Aligné sur les exigences de la réforme e-Invoicing 2026
+          </h2>
+        </div>
+        <div className="lp-badges">
+          {['Directive EN 16931', 'Format Factur-X / UBL', 'Plateforme Publique de Facturation', 'RGPD & sécurité des données'].map(label => (
+            <div className="lp-badge" key={label}>
+              <span className="lp-badge-dot" />
+              {label}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="lp-cta">
+        <h2 className="lp-cta-title">Votre espace vous attend.</h2>
+        <p className="lp-cta-sub">Connectez-vous pour accéder à vos dossiers clients et flux de facturation.</p>
+        <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="lp-footer">
+        <div className="lp-footer-logo">DataRemédiation</div>
+        <div className="lp-footer-text">© 2026 · Tous droits réservés</div>
+      </footer>
+    </div>
+  );
+}
+
+// ── APP ROOT ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState('loading');
   const [user,   setUser]   = useState(null);
@@ -71,11 +398,21 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const resetToken = params.get('token');
     if (resetToken) { setScreen('reset-password'); return; }
-    restoreSession().then(u => {
-      if (u) { setUser(u); setScreen('dashboard'); }
-      else    setScreen('login');
-    });
-    const handler = () => { setUser(null); setFiles([]); setScreen('login'); };
+
+    // Afficher la landing sur "/"
+    if (window.location.pathname === '/' && !params.get('paid')) {
+      restoreSession().then(u => {
+        if (u) { setUser(u); setScreen('dashboard'); }
+        else    setScreen('landing');
+      });
+    } else {
+      restoreSession().then(u => {
+        if (u) { setUser(u); setScreen('dashboard'); }
+        else    setScreen('login');
+      });
+    }
+
+    const handler = () => { setUser(null); setFiles([]); setScreen('landing'); };
     window.addEventListener('auth:logout', handler);
     return () => window.removeEventListener('auth:logout', handler);
   }, []);
@@ -106,17 +443,19 @@ export default function App() {
 
   const handleLogout = async () => {
     await logout().catch(()=>{});
-    setUser(null); setFiles([]); setScreen('login');
+    setUser(null); setFiles([]); setScreen('landing');
   };
 
-  if (screen === 'loading') return <Shell><LoadingScreen /></Shell>;
+  if (screen === 'loading')  return <Shell><LoadingScreen /></Shell>;
+  if (screen === 'landing')  return <LandingPage onEnter={() => setScreen('login')} />;
 
   return (
     <Shell>
       {(screen==='login'||screen==='register') && (
         <AuthScreen mode={screen} onSuccess={handleLogin}
           onSwitch={() => setScreen(screen==='login'?'register':'login')}
-          onForgot={() => setScreen('forgot-password')} />
+          onForgot={() => setScreen('forgot-password')}
+          onBack={() => setScreen('landing')} />
       )}
       {screen === 'forgot-password' && <ForgotPasswordScreen onBack={() => setScreen('login')} />}
       {screen === 'reset-password' && (
@@ -180,7 +519,7 @@ function LoadingScreen() {
   );
 }
 
-function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
+function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
   const [form, setForm] = useState({company:'',email:'',password:'',confirm:''});
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -206,7 +545,13 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot }) {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
       <div style={{position:'fixed',inset:0,backgroundImage:`linear-gradient(${P.border} 1px,transparent 1px),linear-gradient(90deg,${P.border} 1px,transparent 1px)`,backgroundSize:'60px 60px',opacity:.4,pointerEvents:'none'}} />
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px',position:'relative',overflow:'hidden'}}>
-        <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,animation:'progressFill 2s ease-in-out infinite',pointerEvents:'none'}} />
+        <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,pointerEvents:'none'}} />
+
+        {/* Bouton retour landing */}
+        <button onClick={onBack} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,marginBottom:20,display:'flex',alignItems:'center',gap:4,fontFamily:"'JetBrains Mono',monospace"}}>
+          ← Retour à l'accueil
+        </button>
+
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:48,height:48,borderRadius:10,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:22,marginBottom:12}}>⚡</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
@@ -377,7 +722,6 @@ function ResetPasswordScreen({ onSuccess }) {
   );
 }
 
-// ── Panel Abonnements ─────────────────────────────────────────────────────────
 function AbonnementsPanel({ user, onClose }) {
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:24}} onClick={onClose}>
@@ -421,12 +765,9 @@ function AbonnementsPanel({ user, onClose }) {
   );
 }
 
-// ── Widget Crédits ────────────────────────────────────────────────────────────
 function CreditsWidget({ credits, onOpenAbonnements }) {
   if (!credits) return null;
-
   const { credits: nbCredits, abonnement, abonnement_fournisseurs_restants, abonnement_quota, abonnement_reset_date } = credits;
-
   if (abonnement) {
     const resetDate = abonnement_reset_date ? new Date(abonnement_reset_date).toLocaleDateString('fr-FR') : '';
     const pct = abonnement_quota > 0 ? Math.round((abonnement_fournisseurs_restants / abonnement_quota) * 100) : 0;
@@ -442,7 +783,6 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
       </div>
     );
   }
-
   if (nbCredits > 0) {
     return (
       <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
@@ -451,12 +791,8 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
       </div>
     );
   }
-
   return (
-    <button
-      onClick={onOpenAbonnements}
-      style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}
-    >
+    <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
       ⚠ Aucun crédit — S'abonner
     </button>
   );
@@ -468,9 +804,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
   useEffect(() => {
-    if (!isAdmin) {
-      getCredits().then(setCredits).catch(()=>{});
-    }
+    if (!isAdmin) { getCredits().then(setCredits).catch(()=>{}); }
   }, [isAdmin, showUpload]);
 
   const stats = {
@@ -483,7 +817,6 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
       {showAbonnements && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
-
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
@@ -564,7 +897,6 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   );
 }
 
-// ── UploadZone ────────────────────────────────────────────────────────────────
 function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
   const [dragging,       setDragging]       = useState(false);
   const [file,           setFile]           = useState(null);
@@ -585,9 +917,8 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
     }
   }, []);
 
-  // Vérifier si le client a déjà des crédits/abonnement
-const hasCredits = isAdmin || (credits && (credits.credits > 0 || credits.abonnement));
-const canUpload = isAdmin || paid || hasCredits;
+  const hasCredits = isAdmin || (credits && (credits.credits > 0 || credits.abonnement));
+  const canUpload  = isAdmin || paid || hasCredits;
 
   const handle = (f) => {
     const e = valFile(f);
@@ -631,10 +962,7 @@ const canUpload = isAdmin || paid || hasCredits;
     try {
       await uploadFile(file, setProgress, nbFournisseurs);
       await onDone();
-    } catch(e) {
-      setError(e.message);
-      setUploading(false);
-    }
+    } catch(e) { setError(e.message); setUploading(false); }
   };
 
   return (
@@ -856,7 +1184,6 @@ function ReportPanel({ file, onClose, userPlan }) {
         </div>
       ) : (
         <>
-          {/* Stats */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
             {[
               ['Total',      counts.all,      P.blue],
@@ -871,7 +1198,6 @@ function ReportPanel({ file, onClose, userPlan }) {
             ))}
           </div>
 
-          {/* ── Téléchargements EN HAUT ── */}
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Téléchargements sécurisés</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>✗ {error}</div>}
@@ -896,7 +1222,6 @@ function ReportPanel({ file, onClose, userPlan }) {
             <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signés JWT · 15 min · Via backend sécurisé</div>
           </div>
 
-          {/* Détail fournisseurs */}
           {results.length > 0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
