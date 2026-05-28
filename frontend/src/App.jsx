@@ -58,7 +58,7 @@ const STATUS_CFG = {
 // ── LANDING PAGE ──────────────────────────────────────────────────────────────
 function LandingPage({ onEnter }) {
   const landingStyles = `
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 
     .lp-nav {
       position: fixed;
@@ -69,8 +69,8 @@ function LandingPage({ onEnter }) {
       justify-content: space-between;
       padding: 24px 48px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      background: rgba(13,15,20,0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(13,15,20,0.9);
+      backdrop-filter: blur(16px);
     }
     .lp-logo {
       font-family: 'Playfair Display', serif;
@@ -86,14 +86,15 @@ function LandingPage({ onEnter }) {
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #C9A84C;
-      border: 1px solid rgba(201,168,76,0.25);
-      padding: 10px 24px;
+      border: 1px solid rgba(201,168,76,0.3);
+      padding: 10px 28px;
       cursor: pointer;
       background: transparent;
       transition: all 0.25s ease;
       font-family: 'DM Sans', sans-serif;
     }
     .lp-nav-btn:hover { background: #C9A84C; color: #0D0F14; border-color: #C9A84C; }
+
     .lp-hero {
       position: relative;
       z-index: 1;
@@ -102,76 +103,99 @@ function LandingPage({ onEnter }) {
       flex-direction: column;
       justify-content: center;
       padding: 140px 48px 80px;
-      max-width: 900px;
+      max-width: 860px;
     }
     .lp-eyebrow {
+      font-family: 'DM Sans', sans-serif;
       font-size: 0.72rem;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: #C9A84C;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       opacity: 0;
       animation: lpFadeUp 0.7s ease 0.1s forwards;
-      font-family: 'DM Sans', sans-serif;
     }
     .lp-eyebrow::before {
       content: '';
       display: block;
-      width: 32px;
+      width: 36px;
       height: 1px;
       background: #C9A84C;
+      flex-shrink: 0;
     }
     .lp-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-size: clamp(2.6rem, 5.5vw, 4.8rem);
       font-weight: 400;
-      line-height: 1.08;
+      line-height: 1.1;
       letter-spacing: -0.02em;
       color: #F5F3EE;
-      margin-bottom: 32px;
+      margin-bottom: 36px;
       opacity: 0;
       animation: lpFadeUp 0.8s ease 0.25s forwards;
     }
     .lp-title em { font-style: italic; color: #C9A84C; }
+    .lp-title strong {
+      font-weight: 600;
+      color: #ffffff;
+      position: relative;
+      display: inline-block;
+    }
+
     .lp-subtitle {
       font-family: 'DM Sans', sans-serif;
       font-size: 1.05rem;
       font-weight: 300;
-      line-height: 1.7;
-      color: #6B6B72;
-      max-width: 520px;
-      margin-bottom: 52px;
+      line-height: 1.75;
+      color: #7A7A85;
+      max-width: 540px;
+      margin-bottom: 20px;
       opacity: 0;
       animation: lpFadeUp 0.8s ease 0.4s forwards;
+    }
+    .lp-urgence {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #C9A84C;
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-left: 3px solid #C9A84C;
+      padding: 10px 16px;
+      margin-bottom: 44px;
+      max-width: 540px;
+      letter-spacing: 0.01em;
+      opacity: 0;
+      animation: lpFadeUp 0.8s ease 0.5s forwards;
     }
     .lp-actions {
       display: flex;
       align-items: center;
       gap: 24px;
       opacity: 0;
-      animation: lpFadeUp 0.8s ease 0.55s forwards;
+      animation: lpFadeUp 0.8s ease 0.6s forwards;
     }
     .lp-btn-primary {
       background: #C9A84C;
       color: #0D0F14;
       border: none;
-      padding: 16px 40px;
+      padding: 17px 44px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       cursor: pointer;
       transition: all 0.25s ease;
     }
-    .lp-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(201,168,76,0.3); }
+    .lp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(201,168,76,0.3); }
     .lp-btn-link {
       font-family: 'DM Sans', sans-serif;
       font-size: 0.85rem;
-      color: #6B6B72;
+      color: #5A5A65;
       background: none;
       border: none;
       cursor: pointer;
@@ -181,121 +205,163 @@ function LandingPage({ onEnter }) {
       transition: color 0.2s;
     }
     .lp-btn-link:hover { color: #F5F3EE; }
+
+    /* PROBLÈME SECTION */
+    .lp-problem {
+      position: relative;
+      z-index: 1;
+      padding: 80px 48px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: rgba(201,168,76,0.03);
+    }
+    .lp-problem-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #C9A84C;
+      margin-bottom: 20px;
+    }
+    .lp-problem-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 400;
+      color: #F5F3EE;
+      line-height: 1.2;
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+    .lp-problem-title em { font-style: italic; color: #C9A84C; }
+    .lp-risks {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .lp-risk {
+      padding: 28px 24px;
+      background: #0D0F14;
+    }
+    .lp-risk-icon { font-size: 1.4rem; margin-bottom: 12px; }
+    .lp-risk-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #F5F3EE;
+      margin-bottom: 8px;
+    }
+    .lp-risk-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      color: #5A5A65;
+    }
+
+    /* FEATURES */
     .lp-features {
       position: relative;
       z-index: 1;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      border-top: 1px solid rgba(255,255,255,0.06);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(255,255,255,0.02);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .lp-feature {
-      padding: 48px 40px;
-      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 52px 40px;
+      border-right: 1px solid rgba(255,255,255,0.05);
     }
     .lp-feature:last-child { border-right: none; }
     .lp-feature-num {
       font-family: 'Playfair Display', serif;
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       color: #C9A84C;
-      opacity: 0.3;
+      opacity: 0.25;
       line-height: 1;
       margin-bottom: 20px;
     }
     .lp-feature-title {
       font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: #F5F3EE;
       margin-bottom: 12px;
+      line-height: 1.3;
     }
     .lp-feature-text {
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.88rem;
-      line-height: 1.75;
-      color: #6B6B72;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: #5A5A65;
       font-weight: 300;
     }
-    .lp-compliance {
-      position: relative;
-      z-index: 1;
-      padding: 80px 48px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 48px;
-    }
-    .lp-compliance-label {
+    .lp-feature-gain {
+      margin-top: 20px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 500;
       color: #C9A84C;
-      margin-bottom: 16px;
+      letter-spacing: 0.04em;
     }
-    .lp-compliance-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.5rem, 2.5vw, 2.2rem);
-      font-weight: 400;
-      color: #F5F3EE;
-      max-width: 480px;
-      line-height: 1.25;
-    }
-    .lp-badges { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-    .lp-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 18px;
-      border: 1px solid rgba(201,168,76,0.2);
-      background: rgba(201,168,76,0.04);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.8rem;
-      color: #F5F3EE;
-    }
-    .lp-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #C9A84C; flex-shrink: 0; }
+
+    /* CTA FINAL */
     .lp-cta {
       position: relative;
       z-index: 1;
       text-align: center;
-      padding: 96px 48px 80px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 100px 48px 88px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .lp-cta-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #C9A84C;
+      margin-bottom: 20px;
     }
     .lp-cta-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 4vw, 3rem);
+      font-size: clamp(2rem, 4vw, 3.2rem);
       font-weight: 400;
       color: #F5F3EE;
       margin-bottom: 16px;
+      line-height: 1.15;
     }
+    .lp-cta-title em { font-style: italic; color: #C9A84C; }
     .lp-cta-sub {
       font-family: 'DM Sans', sans-serif;
       font-size: 0.95rem;
-      color: #6B6B72;
-      margin-bottom: 40px;
+      color: #5A5A65;
+      margin-bottom: 44px;
+      font-weight: 300;
     }
+
     .lp-footer {
       position: relative;
       z-index: 1;
       padding: 24px 48px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      border-top: 1px solid rgba(255,255,255,0.05);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .lp-footer-logo { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: #4a5878; }
-    .lp-footer-text { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: rgba(107,107,114,0.5); }
+    .lp-footer-logo { font-family: 'Playfair Display', serif; font-size: 0.9rem; color: #3A3A45; }
+    .lp-footer-text { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: #2A2A35; }
+
     @keyframes lpFadeUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
     @media (max-width: 768px) {
       .lp-nav { padding: 20px 24px; }
       .lp-hero { padding: 120px 24px 60px; }
+      .lp-problem { padding: 60px 24px; }
+      .lp-risks { grid-template-columns: 1fr; }
       .lp-features { grid-template-columns: 1fr; }
-      .lp-feature { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 36px 24px; }
-      .lp-compliance { flex-direction: column; padding: 60px 24px; align-items: flex-start; }
-      .lp-cta { padding: 72px 24px 60px; }
+      .lp-feature { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 40px 24px; }
+      .lp-cta { padding: 72px 24px 64px; }
       .lp-footer { flex-direction: column; gap: 8px; padding: 24px; text-align: center; }
     }
   `;
@@ -304,83 +370,115 @@ function LandingPage({ onEnter }) {
     <div style={{ minHeight: '100vh', background: '#0D0F14', position: 'relative', overflow: 'hidden' }}>
       <style>{landingStyles}</style>
 
-      {/* Ambient glow */}
+      {/* Ambient */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse 80% 60% at 70% -10%, rgba(201,168,76,0.07) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at -10% 80%, rgba(201,168,76,0.04) 0%, transparent 50%)'
+        background: 'radial-gradient(ellipse 70% 50% at 75% -5%, rgba(201,168,76,0.06) 0%, transparent 55%), radial-gradient(ellipse 40% 30% at -5% 85%, rgba(201,168,76,0.04) 0%, transparent 50%)'
       }} />
 
       {/* NAV */}
       <nav className="lp-nav">
         <div className="lp-logo">Data<span>Remédiation</span></div>
-        <button className="lp-nav-btn" onClick={onEnter}>Accéder</button>
+        <button className="lp-nav-btn" onClick={onEnter}>Espace client</button>
       </nav>
 
       {/* HERO */}
       <section className="lp-hero">
-        <div className="lp-eyebrow">Agent IA · e-Facturation B2B</div>
+        <div className="lp-eyebrow">Cabinets comptables · Réforme 2026</div>
         <h1 className="lp-title">
-          La conformité facture,<br />
-          <em>automatisée.</em>
+          Vos clients sont-ils prêts<br />
+          pour la <em>facturation électronique</em> ?
         </h1>
         <p className="lp-subtitle">
-          DataRemédiation analyse, corrige et valide vos flux de facturation électronique
-          avant transmission. Conçu pour les cabinets comptables et leurs clients.
+          Nous aidons les cabinets à auditer et fiabiliser automatiquement
+          les bases fournisseurs de leurs clients — avant que la réforme
+          ne rende chaque erreur bloquante.
         </p>
+        <div className="lp-urgence">
+          ⚠ Obligation généralisée dès 2026 · Une base fournisseurs non fiabilisée = des factures rejetées
+        </div>
         <div className="lp-actions">
           <button className="lp-btn-primary" onClick={onEnter}>
             Accéder à l'espace client
           </button>
-          <button className="lp-btn-link" onClick={() => document.getElementById('lp-features')?.scrollIntoView({ behavior: 'smooth' })}>
-            En savoir plus →
+          <button className="lp-btn-link" onClick={() => document.getElementById('lp-problem')?.scrollIntoView({ behavior: 'smooth' })}>
+            Comprendre l'enjeu →
           </button>
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section className="lp-features" id="lp-features">
-        {[
-          { n: '01', title: 'Détection intelligente', text: "L'agent identifie automatiquement les anomalies dans vos factures : TVA incorrecte, mentions obligatoires manquantes, SIRET invalide." },
-          { n: '02', title: 'Remédiation assistée',   text: 'Chaque anomalie est expliquée et corrigée avec suggestion de modification. La validation humaine est préservée pour chaque décision.' },
-          { n: '03', title: 'Traçabilité complète',   text: "Historique d'audit détaillé pour chaque facture traitée. Exportable à tout moment pour vos dossiers de conformité." },
-        ].map(f => (
-          <div className="lp-feature" key={f.n}>
-            <div className="lp-feature-num">{f.n}</div>
-            <div className="lp-feature-title">{f.title}</div>
-            <p className="lp-feature-text">{f.text}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* COMPLIANCE */}
-      <section className="lp-compliance">
-        <div>
-          <div className="lp-compliance-label">Conformité réglementaire</div>
-          <h2 className="lp-compliance-title">
-            Aligné sur les exigences de la réforme e-Invoicing 2026
-          </h2>
-        </div>
-        <div className="lp-badges">
-          {['Directive EN 16931', 'Format Factur-X / UBL', 'Plateforme Publique de Facturation', 'RGPD & sécurité des données'].map(label => (
-            <div className="lp-badge" key={label}>
-              <span className="lp-badge-dot" />
-              {label}
+      {/* PROBLÈME */}
+      <section className="lp-problem" id="lp-problem">
+        <div className="lp-problem-label">Le problème concret</div>
+        <h2 className="lp-problem-title">
+          Une base fournisseurs non vérifiée,<br />
+          c'est un <em>risque opérationnel immédiat</em>.
+        </h2>
+        <div className="lp-risks">
+          {[
+            { icon: '🚫', title: 'SIRET invalide ou radié', text: "Un fournisseur avec un SIRET incorrect sera rejeté automatiquement par la Plateforme Publique de Facturation. Sans correction préalable, la facture ne passe pas." },
+            { icon: '⚠️', title: 'TVA intracommunautaire erronée', text: "Un numéro de TVA non validé sur VIES bloque la déductibilité. Le cabinet engage sa responsabilité si l'erreur n'est pas détectée en amont." },
+            { icon: '📋', title: 'Données manquantes ou doublons', text: "Des champs obligatoires absents ou des doublons dans la base ralentissent le traitement et multiplient les rejets en cascade dès la mise en conformité." },
+          ].map((r, i) => (
+            <div className="lp-risk" key={i}>
+              <div className="lp-risk-icon">{r.icon}</div>
+              <div className="lp-risk-title">{r.title}</div>
+              <p className="lp-risk-text">{r.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CE QU'ON FAIT */}
+      <section className="lp-features" id="lp-features">
+        {[
+          {
+            n: '01',
+            title: 'Audit automatique de la base fournisseurs',
+            text: "Importez le fichier fournisseurs de votre client. En quelques minutes, chaque ligne est contrôlée : SIRET actif, TVA valide, cohérence des données, doublons détectés.",
+            gain: '→ Gain : 0 heure de vérification manuelle'
+          },
+          {
+            n: '02',
+            title: 'Rapport de conformité prêt à livrer',
+            text: "Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF ou Excel — directement transmissible au client.",
+            gain: '→ Gain : un livrable professionnel en un clic'
+          },
+          {
+            n: '03',
+            title: 'Traçabilité complète pour le cabinet',
+            text: "Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validée — pour vos obligations de conseil et votre couverture juridique.",
+            gain: '→ Gain : preuve de diligence horodatée'
+          },
+        ].map(f => (
+          <div className="lp-feature" key={f.n}>
+            <div className="lp-feature-num">{f.n}</div>
+            <div className="lp-feature-title">{f.title}</div>
+            <p className="lp-feature-text">{f.text}</p>
+            <div className="lp-feature-gain">{f.gain}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* CTA FINAL */}
       <section className="lp-cta">
-        <h2 className="lp-cta-title">Votre espace vous attend.</h2>
-        <p className="lp-cta-sub">Connectez-vous pour accéder à vos dossiers clients et flux de facturation.</p>
-        <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
+        <div className="lp-cta-label">Prendre de l'avance</div>
+        <h2 className="lp-cta-title">
+          Le bon moment, c'est<br />
+          <em>avant</em> que la réforme s'applique.
+        </h2>
+        <p className="lp-cta-sub">
+          Accédez à votre espace pour auditer la première base fournisseurs de vos clients.
+        </p>
+        <button className="lp-btn-primary" onClick={onEnter}>
+          Accéder à l'espace client
+        </button>
       </section>
 
       {/* FOOTER */}
       <footer className="lp-footer">
         <div className="lp-footer-logo">DataRemédiation</div>
-        <div className="lp-footer-text">© 2026 · Tous droits réservés</div>
+        <div className="lp-footer-text">© 2026 · Conçu pour les cabinets comptables</div>
       </footer>
     </div>
   );
