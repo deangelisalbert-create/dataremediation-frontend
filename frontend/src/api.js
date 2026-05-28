@@ -172,3 +172,32 @@ export async function getDownloadLink(fileId, type) {
 export function buildDownloadUrl(downloadUrl) {
   return `${BASE_URL}${downloadUrl}`;
 }
+// ── Rectification ─────────────────────────────────────────
+export async function rectifierFichier(file, onProgress) {
+  const formData = new FormData();
+  formData.append('fichier', file);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE_URL}/api/rectification/analyser`);
+    xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        const err = JSON.parse(xhr.responseText || '{}');
+        reject(new Error(err.error || `Erreur ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Erreur réseau'));
+    xhr.send(formData);
+  });
+}
