@@ -1,4 +1,8 @@
     // frontend/src/App.jsx
+import LandingPage from './pages/LandingPage';
+
+// Dans ton <Routes> :
+<Route path="/" element={<LandingPage />} />
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
