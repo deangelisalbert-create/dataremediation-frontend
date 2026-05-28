@@ -189,3 +189,115 @@ export function RectificationPanel({ onClose }) {
             {/* Stats */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16}}>
               {[
+                ['Total',      stats.total,     P.blue],
+                ['Valides',    stats.valides,   P.accent],
+                ['Corrigés',   stats.corriges,  P.warn],
+                ['Erreurs',    stats.erreurs,   P.danger],
+              ].map(([l,v,c],i)=>(
+                <div key={i} style={{background:P.surface,border:`1px solid ${c}20`,borderRadius:8,padding:'12px',textAlign:'center'}}>
+                  <div style={{fontSize:9,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em'}}>{l}</div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:c,marginTop:4}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Fichier info */}
+            <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:12,marginBottom:16,fontSize:10,color:P.muted}}>
+              📄 {meta.fichier} · {meta.total_lignes} lignes · {new Date(meta.date_analyse).toLocaleString('fr-FR')}
+            </div>
+
+            {/* Filtres */}
+            <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+              {[
+                ['all',      `Tous (${details.length})`,   P.chrome],
+                ['valide',   `✓ Valides (${stats.valides})`,  P.accent],
+                ['corrige',  `⚡ Corrigés (${stats.corriges})`, P.warn],
+                ['anomalie', `✗ Anomalies (${(stats.total||0)-(stats.valides||0)-(stats.corriges||0)})`, P.danger],
+              ].map(([key,label,color])=>(
+                <button key={key} onClick={()=>setFilter(key)} style={{
+                  background: filter===key ? `${color}15` : 'transparent',
+                  border:`1px solid ${filter===key ? color+'50' : P.border}`,
+                  color: filter===key ? color : P.muted,
+                  padding:'4px 10px', borderRadius:4, fontSize:10, cursor:'pointer',
+                  fontFamily:"'JetBrains Mono',monospace", transition:'all .15s',
+                }}>{label}</button>
+              ))}
+            </div>
+
+            {/* Détails */}
+            <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:400,overflowY:'auto'}}>
+              {filtered.map((d,i)=>(
+                <div key={i} style={{
+                  background:P.surface,
+                  border:`1px solid ${d.statut==='VALIDE'?P.accent+'30':d.statut==='CORRIGE'?P.warn+'30':P.danger+'30'}`,
+                  borderRadius:8, padding:'12px 14px',
+                  borderLeft:`3px solid ${d.statut==='VALIDE'?P.accent:d.statut==='CORRIGE'?P.warn:P.danger}`,
+                }}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <div style={{fontSize:11,color:P.muted}}>Ligne {d.index + 1}</div>
+                    <span style={{
+                      background: d.statut==='VALIDE'?`${P.accent}15`:d.statut==='CORRIGE'?`${P.warn}15`:`${P.danger}15`,
+                      color: d.statut==='VALIDE'?P.accent:d.statut==='CORRIGE'?P.warn:P.danger,
+                      border:`1px solid ${d.statut==='VALIDE'?P.accent+'30':d.statut==='CORRIGE'?P.warn+'30':P.danger+'30'}`,
+                      borderRadius:4, padding:'2px 8px', fontSize:9, fontWeight:600,
+                      letterSpacing:'.07em', textTransform:'uppercase',
+                    }}>
+                      {d.statut==='VALIDE'?'✓ Valide':d.statut==='CORRIGE'?'⚡ Corrigé':'✗ Anomalie'}
+                    </span>
+                  </div>
+
+                  {/* Anomalies */}
+                  {d.anomalies?.length > 0 && (
+                    <div style={{marginBottom:6}}>
+                      {d.anomalies.map((a,j)=>(
+                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>
+                          ✗ {a.champ} — {a.type} {a.valeur ? `(${a.valeur})` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Corrections */}
+                  {d.corrections?.length > 0 && (
+                    <div style={{borderTop:`1px solid ${P.border}`,paddingTop:8,marginTop:6}}>
+                      {d.corrections.map((c,j)=>(
+                        <div key={j} style={{fontSize:10,marginTop:4}}>
+                          <span style={{color:P.warn}}>⚡ {c.champ}</span>
+                          <span style={{color:P.muted}}> : </span>
+                          <span style={{color:P.danger,textDecoration:'line-through'}}>{c.avant}</span>
+                          <span style={{color:P.muted}}> → </span>
+                          <span style={{color:P.accent}}>{c.apres}</span>
+                          <span style={{color:P.dim,marginLeft:6}}>({c.confiance})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* INSEE */}
+                  {d.enrichissement_insee && (
+                    <div style={{fontSize:10,color:P.muted,marginTop:6,paddingTop:6,borderTop:`1px solid ${P.border}`}}>
+                      🏢 {d.enrichissement_insee.raison_sociale} · {d.enrichissement_insee.statut_entreprise}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Nouveau fichier */}
+            <button
+              onClick={()=>{setRapport(null);setFile(null);setProgress(0);}}
+              style={{
+                width:'100%', marginTop:16, padding:'11px', borderRadius:8,
+                background:'transparent', border:`1px solid ${P.border}`,
+                color:P.muted, fontSize:12, cursor:'pointer',
+                fontFamily:"'JetBrains Mono',monospace",
+              }}
+            >
+              ↩ Rectifier un autre fichier
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
