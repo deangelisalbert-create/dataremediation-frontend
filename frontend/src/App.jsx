@@ -1001,6 +1001,11 @@ function ReportPanel({ file, onClose, userPlan }) {
             </div>
             <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signes JWT · 15 min · Via backend securise</div>
           </div>
+         {data.rapport && (
+            <div style={{marginBottom:16}}>
+              <RapportPanel rapport={data.rapport} />
+            </div>
+          )}
           {results.length>0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
