@@ -9,14 +9,16 @@ const P = {
   text:'#c8d4ee', muted:'#4a5878', dim:'#2a3450', chrome:'#8899cc',
 };
 
-const ALLOWED = ['.csv', '.xml', '.json'];
+const ALLOWED = ['.csv', '.xml', '.json', '.xlsx', '.xls'];
 const MAX_MB  = 10;
+const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 export function RectificationPanel({ onClose }) {
   const [file,       setFile]       = useState(null);
   const [dragging,   setDragging]   = useState(false);
   const [progress,   setProgress]   = useState(0);
   const [loading,    setLoading]    = useState(false);
+  const [exporting,  setExporting]  = useState(false);
   const [error,      setError]      = useState('');
   const [rapport,    setRapport]    = useState(null);
   const [filter,     setFilter]     = useState('all');
@@ -24,7 +26,7 @@ export function RectificationPanel({ onClose }) {
 
   const handleFile = (f) => {
     const ext = '.' + f.name.split('.').pop().toLowerCase();
-    if (!ALLOWED.includes(ext)) return setError('Format non supporté. Utilisez CSV, XML ou JSON.');
+    if (!ALLOWED.includes(ext)) return setError('Format non supporté. Utilisez CSV, XLSX, XML ou JSON.');
     if (f.size > MAX_MB * 1024 * 1024) return setError(`Fichier trop volumineux (max ${MAX_MB} Mo)`);
     setError('');
     setFile(f);
@@ -41,6 +43,37 @@ export function RectificationPanel({ onClose }) {
       setError(e.message);
     }
     setLoading(false);
+  };
+
+  const exporterExcel = async () => {
+    if (!rapport) return;
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      const res = await fetch(`${API_URL}/api/rectification/export-excel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          rapport:          rapport.rapport,
+          donnees_corrigees: rapport.donnees_corrigees,
+          nomFichier:       file?.name || 'rectification',
+        }),
+      });
+      if (!res.ok) throw new Error('Erreur export Excel');
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `rectifie_${(file?.name || 'fichier').replace(/\.[^.]+$/, '')}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) {
+      setError(e.message);
+    }
+    setExporting(false);
   };
 
   const scoreColor = (v) => v >= 90 ? P.accent : v >= 70 ? P.blue : v >= 50 ? P.warn : P.danger;
@@ -83,7 +116,6 @@ export function RectificationPanel({ onClose }) {
         {/* Zone upload */}
         {!rapport && (
           <div
-            className={dragging ? 'drop-active' : ''}
             onClick={() => inputRef.current?.click()}
             onDragOver={e=>{e.preventDefault();setDragging(true)}}
             onDragLeave={()=>setDragging(false)}
@@ -95,7 +127,7 @@ export function RectificationPanel({ onClose }) {
               background: file ? `${P.accent}05` : 'transparent',
             }}
           >
-            <input ref={inputRef} type="file" accept=".csv,.xml,.json"
+            <input ref={inputRef} type="file" accept=".csv,.xml,.json,.xlsx,.xls"
               onChange={e=>{if(e.target.files[0])handleFile(e.target.files[0])}}
               style={{display:'none'}} />
             {file ? (
@@ -110,7 +142,7 @@ export function RectificationPanel({ onClose }) {
               <>
                 <div style={{fontSize:36,marginBottom:10,color:P.dim}}>⊕</div>
                 <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-déposer ou cliquer</div>
-                <div style={{fontSize:11,color:P.muted}}>CSV · XML · JSON — max {MAX_MB} Mo</div>
+                <div style={{fontSize:11,color:P.muted}}>CSV · XLSX · XML · JSON — max {MAX_MB} Mo</div>
               </>
             )}
           </div>
@@ -206,6 +238,27 @@ export function RectificationPanel({ onClose }) {
               📄 {meta.fichier} · {meta.total_lignes} lignes · {new Date(meta.date_analyse).toLocaleString('fr-FR')}
             </div>
 
+            {/* ── BOUTONS EXPORT ── */}
+            <div style={{display:'flex',gap:10,marginBottom:16}}>
+              <button
+                onClick={exporterExcel}
+                disabled={exporting}
+                style={{
+                  flex:1, padding:'12px', borderRadius:8, border:'none',
+                  background: exporting ? P.dim : P.accent,
+                  color: exporting ? P.muted : '#000',
+                  fontWeight:700, fontSize:12, cursor: exporting ? 'not-allowed' : 'pointer',
+                  fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em', textTransform:'uppercase',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                }}
+              >
+                {exporting ? '⟳ Export en cours…' : '↓ Télécharger Excel corrigé'}
+              </button>
+            </div>
+            <div style={{fontSize:9,color:P.dim,textAlign:'center',marginBottom:12}}>
+              Fichier Excel avec 4 onglets : Résumé · Données corrigées · Corrections détaillées · Anomalies
+            </div>
+
             {/* Filtres */}
             <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
               {[
@@ -245,8 +298,6 @@ export function RectificationPanel({ onClose }) {
                       {d.statut==='VALIDE'?'✓ Valide':d.statut==='CORRIGE'?'⚡ Corrigé':'✗ Anomalie'}
                     </span>
                   </div>
-
-                  {/* Anomalies */}
                   {d.anomalies?.length > 0 && (
                     <div style={{marginBottom:6}}>
                       {d.anomalies.map((a,j)=>(
@@ -256,8 +307,6 @@ export function RectificationPanel({ onClose }) {
                       ))}
                     </div>
                   )}
-
-                  {/* Corrections */}
                   {d.corrections?.length > 0 && (
                     <div style={{borderTop:`1px solid ${P.border}`,paddingTop:8,marginTop:6}}>
                       {d.corrections.map((c,j)=>(
@@ -272,8 +321,6 @@ export function RectificationPanel({ onClose }) {
                       ))}
                     </div>
                   )}
-
-                  {/* INSEE */}
                   {d.enrichissement_insee && (
                     <div style={{fontSize:10,color:P.muted,marginTop:6,paddingTop:6,borderTop:`1px solid ${P.border}`}}>
                       🏢 {d.enrichissement_insee.raison_sociale} · {d.enrichissement_insee.statut_entreprise}
@@ -285,7 +332,7 @@ export function RectificationPanel({ onClose }) {
 
             {/* Nouveau fichier */}
             <button
-              onClick={()=>{setRapport(null);setFile(null);setProgress(0);}}
+              onClick={()=>{setRapport(null);setFile(null);setProgress(0);setError('');}}
               style={{
                 width:'100%', marginTop:16, padding:'11px', borderRadius:8,
                 background:'transparent', border:`1px solid ${P.border}`,
