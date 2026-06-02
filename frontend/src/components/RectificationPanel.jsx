@@ -75,7 +75,37 @@ export function RectificationPanel({ onClose }) {
     }
     setExporting(false);
   };
-
+const exporterPDF = async () => {
+    if (!rapport) return;
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+      const res = await fetch(`${API_URL}/api/rectification/export-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          rapport:           rapport.rapport,
+          donnees_corrigees: rapport.donnees_corrigees,
+          nomFichier:        file?.name || 'rectification',
+          companyName:       '',
+        }),
+      });
+      if (!res.ok) throw new Error('Erreur export PDF');
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `conformite_${(file?.name || 'fichier').replace(/\.[^.]+$/, '')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) {
+      setError(e.message);
+    }
+    setExporting(false);
+  };
   const scoreColor = (v) => v >= 90 ? P.accent : v >= 70 ? P.blue : v >= 50 ? P.warn : P.danger;
 
   const details = rapport?.rapport?.details || [];
