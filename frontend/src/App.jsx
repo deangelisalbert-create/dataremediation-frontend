@@ -557,21 +557,32 @@ function AbonnementsPanel({ user, onClose }) {
 
 function CreditsWidget({ credits, onOpenAbonnements }) {
   if (!credits) return null;
-  const { credits: nbCredits, abonnement, abonnement_fournisseurs_restants, abonnement_quota, abonnement_reset_date } = credits;
+  const { abonnement, abonnement_audits_used, abonnement_quota_audits, abonnement_reset_date } = credits;
+
   if (abonnement) {
+    const used  = abonnement_audits_used || 0;
+    const quota = abonnement_quota_audits || 0;
+    const pct   = quota > 0 ? Math.round((used / quota) * 100) : 0;
+    const color = pct < 70 ? P.accent : pct < 90 ? P.warn : P.danger;
     const resetDate = abonnement_reset_date ? new Date(abonnement_reset_date).toLocaleDateString('fr-FR') : '';
-    const pct = abonnement_quota > 0 ? Math.round((abonnement_fournisseurs_restants / abonnement_quota) * 100) : 0;
-    const color = pct > 50 ? P.accent : pct > 20 ? P.warn : P.danger;
     return (
-      <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:10}}>
         <div>
-          <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>Abonnement {abonnement}</div>
-          <div style={{color,fontWeight:700}}>{abonnement_fournisseurs_restants} / {abonnement_quota} fournisseurs</div>
+          <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>{abonnement}</div>
+          <div style={{color,fontWeight:700}}>{used} / {quota === 9999 ? 'illimite' : quota} audits</div>
           {resetDate && <div style={{color:P.dim,fontSize:9}}>Reset le {resetDate}</div>}
         </div>
+        <div style={{width:6,height:6,borderRadius:'50%',background:color}} />
       </div>
     );
   }
+
+  return (
+    <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
+      ! Aucun abonnement
+    </button>
+  );
+}
   if (nbCredits > 0) {
     return (
       <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
