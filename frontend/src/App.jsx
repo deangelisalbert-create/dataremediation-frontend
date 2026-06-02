@@ -1,4 +1,4 @@
-    import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
   register, login, logout,
@@ -26,17 +26,17 @@ const P = {
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 const ABONNEMENTS = [
-  { label:'Starter', prix:'249 € HT/mois', desc:"Jusqu'à 50 fournisseurs", features:['Contrôle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
-  { label:'PME BTP', prix:'459 € HT/mois', desc:'51 à 200 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Rapport PDF','Support prioritaire'], link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff' },
-  { label:'PME Structurée', prix:'890 € HT/mois', desc:'201 à 500 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Scoring conformité','Rapport PDF avancé','Support dédié'], link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340' },
-  { label:'Cabinet Comptable', prix:'1 990 € HT/mois', desc:'Portefeuille clients illimité', features:['Multi-clients','Contrôle SIRET mensuel','Validation TVA','Détection doublons','Tableaux de bord','Rapports PDF white-label','Account manager dédié'], link:'https://buy.stripe.com/28EfZae87grn0664OTfQI08', color:'#ff4566' },
+  { label:'Starter', prix:'249 EUR HT/mois', desc:"Jusqu'a 50 fournisseurs", features:['Controle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
+  { label:'PME BTP', prix:'459 EUR HT/mois', desc:'51 a 200 fournisseurs', features:['Controle SIRET mensuel','Validation TVA','Detection doublons','Rapport PDF','Support prioritaire'], link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff' },
+  { label:'PME Structuree', prix:'890 EUR HT/mois', desc:'201 a 500 fournisseurs', features:['Controle SIRET mensuel','Validation TVA','Detection doublons','Scoring conformite','Rapport PDF avance','Support dedie'], link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340' },
+  { label:'Cabinet Comptable', prix:'1 990 EUR HT/mois', desc:'Portefeuille clients illimite', features:['Multi-clients','Controle SIRET mensuel','Validation TVA','Detection doublons','Tableaux de bord','Rapports PDF white-label','Account manager dedie'], link:'https://buy.stripe.com/28EfZae87grn0664OTfQI08', color:'#ff4566' },
 ];
 
 function fmtSize(b){ return b>1048576?`${(b/1048576).toFixed(1)} Mo`:`${(b/1024).toFixed(0)} Ko`; }
 function fmtDate(ts){ return new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
 function fmtTTL(ts){
   const diff = ts - Date.now();
-  if (diff <= 0) return 'Expiré';
+  if (diff <= 0) return 'Expire';
   const h = Math.floor(diff/3600000);
   const m = Math.floor((diff%3600000)/60000);
   return h > 0 ? `${h}h${m}min` : `${m} min`;
@@ -44,29 +44,23 @@ function fmtTTL(ts){
 function valFile(f){
   const ext = '.'+f.name.split('.').pop().toLowerCase();
   const e = [];
-  if (!ALLOWED_EXT.includes(ext)) e.push(`Format non accepté : ${ext}`);
+  if (!ALLOWED_EXT.includes(ext)) e.push(`Format non accepte : ${ext}`);
   if (f.size > MAX_SIZE_BYTES)     e.push(`Trop volumineux (max ${MAX_SIZE_MB} Mo)`);
   if (f.size === 0)                e.push('Fichier vide');
   return e;
 }
 
 const STATUS_CFG = {
-  importing: { label:'Importé',    color:'#4a9eff', icon:'↑', pulse:true  },
+  importing: { label:'Importe',    color:'#4a9eff', icon:'↑', pulse:true  },
   analyzing: { label:'En analyse', color:'#ffb340', icon:'◎', pulse:true  },
-  done:      { label:'Terminé',    color:'#00e5a0', icon:'✓', pulse:false },
+  done:      { label:'Termine',    color:'#00e5a0', icon:'✓', pulse:false },
   error:     { label:'Erreur',     color:'#ff4566', icon:'✗', pulse:false },
 };
 
-// ── Logo DataRemédiation ──────────────────────────────────
 function LogoDR({ size = 32 }) {
   return (
-    <img
-      src="/logo.png"
-      alt="DataRemediation"
-      width={size}
-      height={size}
-      style={{ objectFit: 'contain', display: 'block' }}
-    />
+    <img src="/logo.png" alt="DataRemediation" width={size} height={size}
+      style={{ objectFit:'contain', display:'block' }} />
   );
 }
 
@@ -74,85 +68,81 @@ function LogoDR({ size = 32 }) {
 function LandingPage({ onEnter }) {
   const landingStyles = `
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
-    .lp-nav { position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:24px 48px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(13,15,20,0.9);backdrop-filter:blur(16px); }
-    .lp-logo { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:500;color:#F5F3EE;letter-spacing:0.02em;display:flex;align-items:center;gap:10px; }
-    .lp-logo span { color:#C9A84C; }
-    .lp-nav-btn { font-size:0.78rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.3);padding:10px 28px;cursor:pointer;background:transparent;transition:all 0.25s ease;font-family:'DM Sans',sans-serif; }
-    .lp-nav-btn:hover { background:#C9A84C;color:#0D0F14;border-color:#C9A84C; }
-    .lp-hero { position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:140px 48px 80px;max-width:860px; }
-    .lp-eyebrow { font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:#C9A84C;margin-bottom:32px;display:flex;align-items:center;gap:14px;opacity:0;animation:lpFadeUp 0.7s ease 0.1s forwards; }
-    .lp-eyebrow::before { content:'';display:block;width:36px;height:1px;background:#C9A84C;flex-shrink:0; }
-    .lp-title { font-family:'Playfair Display',serif;font-size:clamp(2.6rem,5.5vw,4.8rem);font-weight:400;line-height:1.1;letter-spacing:-0.02em;color:#F5F3EE;margin-bottom:36px;opacity:0;animation:lpFadeUp 0.8s ease 0.25s forwards; }
-    .lp-title em { font-style:italic;color:#C9A84C; }
-    .lp-subtitle { font-family:'DM Sans',sans-serif;font-size:1.05rem;font-weight:300;line-height:1.75;color:#7A7A85;max-width:540px;margin-bottom:20px;opacity:0;animation:lpFadeUp 0.8s ease 0.4s forwards; }
-    .lp-urgence { font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;color:#C9A84C;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-left:3px solid #C9A84C;padding:10px 16px;margin-bottom:44px;max-width:540px;letter-spacing:0.01em;opacity:0;animation:lpFadeUp 0.8s ease 0.5s forwards; }
-    .lp-actions { display:flex;align-items:center;gap:24px;opacity:0;animation:lpFadeUp 0.8s ease 0.6s forwards; }
-    .lp-btn-primary { background:#C9A84C;color:#0D0F14;border:none;padding:17px 44px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.25s ease; }
-    .lp-btn-primary:hover { transform:translateY(-2px);box-shadow:0 10px 36px rgba(201,168,76,0.3); }
-    .lp-btn-link { font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#5A5A65;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:color 0.2s; }
-    .lp-btn-link:hover { color:#F5F3EE; }
-    .lp-problem { position:relative;z-index:1;padding:80px 48px;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(201,168,76,0.03); }
-    .lp-problem-label { font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px; }
-    .lp-problem-title { font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:400;color:#F5F3EE;line-height:1.2;max-width:640px;margin-bottom:40px; }
-    .lp-problem-title em { font-style:italic;color:#C9A84C; }
-    .lp-risks { display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06); }
-    .lp-risk { padding:28px 24px;background:#0D0F14; }
-    .lp-risk-icon { font-size:1.4rem;margin-bottom:12px; }
-    .lp-risk-title { font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:500;color:#F5F3EE;margin-bottom:8px; }
-    .lp-risk-text { font-family:'DM Sans',sans-serif;font-size:0.8rem;line-height:1.65;color:#5A5A65; }
-    .lp-features { position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05); }
-    .lp-feature { padding:52px 40px;border-right:1px solid rgba(255,255,255,0.05); }
-    .lp-feature:last-child { border-right:none; }
-    .lp-feature-num { font-family:'Playfair Display',serif;font-size:2.2rem;color:#C9A84C;opacity:0.25;line-height:1;margin-bottom:20px; }
-    .lp-feature-title { font-family:'Playfair Display',serif;font-size:1.05rem;color:#F5F3EE;margin-bottom:12px;line-height:1.3; }
-    .lp-feature-text { font-family:'DM Sans',sans-serif;font-size:0.85rem;line-height:1.8;color:#5A5A65;font-weight:300; }
-    .lp-feature-gain { margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;color:#C9A84C;letter-spacing:0.04em; }
-    .lp-cta { position:relative;z-index:1;text-align:center;padding:100px 48px 88px;border-top:1px solid rgba(255,255,255,0.05); }
-    .lp-cta-label { font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px; }
-    .lp-cta-title { font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:400;color:#F5F3EE;margin-bottom:16px;line-height:1.15; }
-    .lp-cta-title em { font-style:italic;color:#C9A84C; }
-    .lp-cta-sub { font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#5A5A65;margin-bottom:44px;font-weight:300; }
-    .lp-footer { position:relative;z-index:1;padding:24px 48px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between; }
-    .lp-footer-logo { font-family:'Playfair Display',serif;font-size:0.9rem;color:#3A3A45;display:flex;align-items:center;gap:8px; }
-    .lp-footer-text { font-family:'DM Sans',sans-serif;font-size:0.75rem;color:#2A2A35; }
-    @keyframes lpFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-    @media (max-width:768px) {
-      .lp-nav{padding:20px 24px} .lp-hero{padding:120px 24px 60px} .lp-problem{padding:60px 24px}
-      .lp-risks{grid-template-columns:1fr} .lp-features{grid-template-columns:1fr}
+    .lp-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:24px 48px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(13,15,20,0.9);backdrop-filter:blur(16px)}
+    .lp-logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:500;color:#F5F3EE;letter-spacing:0.02em;display:flex;align-items:center;gap:10px}
+    .lp-logo span{color:#C9A84C}
+    .lp-nav-btn{font-size:0.78rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.3);padding:10px 28px;cursor:pointer;background:transparent;transition:all 0.25s ease;font-family:'DM Sans',sans-serif}
+    .lp-nav-btn:hover{background:#C9A84C;color:#0D0F14;border-color:#C9A84C}
+    .lp-hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:140px 48px 80px;max-width:860px}
+    .lp-eyebrow{font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:#C9A84C;margin-bottom:32px;display:flex;align-items:center;gap:14px;opacity:0;animation:lpFadeUp 0.7s ease 0.1s forwards}
+    .lp-eyebrow::before{content:'';display:block;width:36px;height:1px;background:#C9A84C;flex-shrink:0}
+    .lp-title{font-family:'Playfair Display',serif;font-size:clamp(2.6rem,5.5vw,4.8rem);font-weight:400;line-height:1.1;letter-spacing:-0.02em;color:#F5F3EE;margin-bottom:36px;opacity:0;animation:lpFadeUp 0.8s ease 0.25s forwards}
+    .lp-title em{font-style:italic;color:#C9A84C}
+    .lp-subtitle{font-family:'DM Sans',sans-serif;font-size:1.05rem;font-weight:300;line-height:1.75;color:#7A7A85;max-width:540px;margin-bottom:20px;opacity:0;animation:lpFadeUp 0.8s ease 0.4s forwards}
+    .lp-urgence{font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;color:#C9A84C;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-left:3px solid #C9A84C;padding:10px 16px;margin-bottom:44px;max-width:540px;letter-spacing:0.01em;opacity:0;animation:lpFadeUp 0.8s ease 0.5s forwards}
+    .lp-actions{display:flex;align-items:center;gap:24px;opacity:0;animation:lpFadeUp 0.8s ease 0.6s forwards}
+    .lp-btn-primary{background:#C9A84C;color:#0D0F14;border:none;padding:17px 44px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.25s ease}
+    .lp-btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(201,168,76,0.3)}
+    .lp-btn-link{font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#5A5A65;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:color 0.2s}
+    .lp-btn-link:hover{color:#F5F3EE}
+    .lp-problem{position:relative;z-index:1;padding:80px 48px;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(201,168,76,0.03)}
+    .lp-problem-label{font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px}
+    .lp-problem-title{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.4rem);font-weight:400;color:#F5F3EE;line-height:1.2;max-width:640px;margin-bottom:40px}
+    .lp-problem-title em{font-style:italic;color:#C9A84C}
+    .lp-risks{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)}
+    .lp-risk{padding:28px 24px;background:#0D0F14}
+    .lp-risk-icon{font-size:1.4rem;margin-bottom:12px}
+    .lp-risk-title{font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:500;color:#F5F3EE;margin-bottom:8px}
+    .lp-risk-text{font-family:'DM Sans',sans-serif;font-size:0.8rem;line-height:1.65;color:#5A5A65}
+    .lp-features{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05)}
+    .lp-feature{padding:52px 40px;border-right:1px solid rgba(255,255,255,0.05)}
+    .lp-feature:last-child{border-right:none}
+    .lp-feature-num{font-family:'Playfair Display',serif;font-size:2.2rem;color:#C9A84C;opacity:0.25;line-height:1;margin-bottom:20px}
+    .lp-feature-title{font-family:'Playfair Display',serif;font-size:1.05rem;color:#F5F3EE;margin-bottom:12px;line-height:1.3}
+    .lp-feature-text{font-family:'DM Sans',sans-serif;font-size:0.85rem;line-height:1.8;color:#5A5A65;font-weight:300}
+    .lp-feature-gain{margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;color:#C9A84C;letter-spacing:0.04em}
+    .lp-cta{position:relative;z-index:1;text-align:center;padding:100px 48px 88px;border-top:1px solid rgba(255,255,255,0.05)}
+    .lp-cta-label{font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#C9A84C;margin-bottom:20px}
+    .lp-cta-title{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:400;color:#F5F3EE;margin-bottom:16px;line-height:1.15}
+    .lp-cta-title em{font-style:italic;color:#C9A84C}
+    .lp-cta-sub{font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#5A5A65;margin-bottom:44px;font-weight:300}
+    .lp-footer{position:relative;z-index:1;padding:24px 48px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between}
+    .lp-footer-logo{font-family:'Playfair Display',serif;font-size:0.9rem;color:#3A3A45;display:flex;align-items:center;gap:8px}
+    .lp-footer-text{font-family:'DM Sans',sans-serif;font-size:0.75rem;color:#2A2A35}
+    @keyframes lpFadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:768px){
+      .lp-nav{padding:20px 24px}.lp-hero{padding:120px 24px 60px}.lp-problem{padding:60px 24px}
+      .lp-risks{grid-template-columns:1fr}.lp-features{grid-template-columns:1fr}
       .lp-feature{border-right:none;border-bottom:1px solid rgba(255,255,255,0.05);padding:40px 24px}
-      .lp-cta{padding:72px 24px 64px} .lp-footer{flex-direction:column;gap:8px;padding:24px;text-align:center}
+      .lp-cta{padding:72px 24px 64px}.lp-footer{flex-direction:column;gap:8px;padding:24px;text-align:center}
     }
   `;
-
   return (
     <div style={{minHeight:'100vh',background:'#0D0F14',position:'relative',overflow:'hidden'}}>
       <style>{landingStyles}</style>
       <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:0,background:'radial-gradient(ellipse 70% 50% at 75% -5%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 40% 30% at -5% 85%,rgba(201,168,76,0.04) 0%,transparent 50%)'}} />
       <nav className="lp-nav">
-        <div className="lp-logo">
-          <LogoDR size={36} />
-          Data<span>Remédiation</span>
-        </div>
+        <div className="lp-logo"><LogoDR size={36} />Data<span>Remediation</span></div>
         <button className="lp-nav-btn" onClick={onEnter}>Espace client</button>
       </nav>
       <section className="lp-hero">
-        <div className="lp-eyebrow">Cabinets comptables · Réforme 2026</div>
-        <h1 className="lp-title">Vos clients sont-ils prêts<br />pour la <em>facturation électronique</em> ?</h1>
-        <p className="lp-subtitle">Nous aidons les cabinets à auditer et fiabiliser automatiquement les bases fournisseurs de leurs clients — avant que la réforme ne rende chaque erreur bloquante.</p>
-        <div className="lp-urgence">⚠ Obligation généralisée dès 2026 · Une base fournisseurs non fiabilisée = des factures rejetées</div>
+        <div className="lp-eyebrow">Cabinets comptables · Reforme 2026</div>
+        <h1 className="lp-title">Vos clients sont-ils prets<br />pour la <em>facturation electronique</em> ?</h1>
+        <p className="lp-subtitle">Nous aidons les cabinets a auditer et fiabiliser automatiquement les bases fournisseurs de leurs clients — avant que la reforme ne rende chaque erreur bloquante.</p>
+        <div className="lp-urgence">Obligation generalisee des 2026 · Une base fournisseurs non fiabilisee = des factures rejetees</div>
         <div className="lp-actions">
-          <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
-          <button className="lp-btn-link" onClick={()=>document.getElementById('lp-problem')?.scrollIntoView({behavior:'smooth'})}>Comprendre l'enjeu →</button>
+          <button className="lp-btn-primary" onClick={onEnter}>Acceder a l'espace client</button>
+          <button className="lp-btn-link" onClick={()=>document.getElementById('lp-problem')?.scrollIntoView({behavior:'smooth'})}>Comprendre l'enjeu</button>
         </div>
       </section>
       <section className="lp-problem" id="lp-problem">
-        <div className="lp-problem-label">Le problème concret</div>
-        <h2 className="lp-problem-title">Une base fournisseurs non vérifiée,<br />c'est un <em>risque opérationnel immédiat</em>.</h2>
+        <div className="lp-problem-label">Le probleme concret</div>
+        <h2 className="lp-problem-title">Une base fournisseurs non verifiee,<br />c'est un <em>risque operationnel immediat</em>.</h2>
         <div className="lp-risks">
           {[
-            {icon:'🚫',title:'SIRET invalide ou radié',text:"Un fournisseur avec un SIRET incorrect sera rejeté automatiquement par la Plateforme Publique de Facturation. Sans correction préalable, la facture ne passe pas."},
-            {icon:'⚠️',title:'TVA intracommunautaire erronée',text:"Un numéro de TVA non validé sur VIES bloque la déductibilité. Le cabinet engage sa responsabilité si l'erreur n'est pas détectée en amont."},
-            {icon:'📋',title:'Données manquantes ou doublons',text:"Des champs obligatoires absents ou des doublons dans la base ralentissent le traitement et multiplient les rejets en cascade dès la mise en conformité."},
+            {icon:'X',title:'SIRET invalide ou radie',text:"Un fournisseur avec un SIRET incorrect sera rejete automatiquement par la Plateforme Publique de Facturation."},
+            {icon:'!',title:'TVA intracommunautaire erronee',text:"Un numero de TVA non valide sur VIES bloque la deductibilite. Le cabinet engage sa responsabilite."},
+            {icon:'*',title:'Donnees manquantes ou doublons',text:"Des champs obligatoires absents ou des doublons dans la base multiplient les rejets en cascade."},
           ].map((r,i)=>(
             <div className="lp-risk" key={i}>
               <div className="lp-risk-icon">{r.icon}</div>
@@ -164,9 +154,9 @@ function LandingPage({ onEnter }) {
       </section>
       <section className="lp-features" id="lp-features">
         {[
-          {n:'01',title:'Audit automatique de la base fournisseurs',text:"Importez le fichier fournisseurs de votre client. En quelques minutes, chaque ligne est contrôlée : SIRET actif, TVA valide, cohérence des données, doublons détectés.",gain:'→ Gain : 0 heure de vérification manuelle'},
-          {n:'02',title:'Rapport de conformité prêt à livrer',text:"Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF — directement transmissible au client.",gain:'→ Gain : un livrable professionnel en un clic'},
-          {n:'03',title:'Traçabilité complète pour le cabinet',text:"Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validée — pour vos obligations de conseil et votre couverture juridique.",gain:'→ Gain : preuve de diligence horodatée'},
+          {n:'01',title:'Audit automatique de la base fournisseurs',text:"Importez le fichier fournisseurs. En quelques minutes, chaque ligne est controlee : SIRET actif, TVA valide, coherence des donnees, doublons detectes.",gain:'Gain : 0 heure de verification manuelle'},
+          {n:'02',title:'Rapport de conformite pret a livrer',text:"Chaque anomalie est expliquee, classee par niveau de risque et exportee en PDF — directement transmissible au client.",gain:'Gain : un livrable professionnel en un clic'},
+          {n:'03',title:'Tracabilite complete pour le cabinet',text:"Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validee.",gain:'Gain : preuve de diligence horodatee'},
         ].map(f=>(
           <div className="lp-feature" key={f.n}>
             <div className="lp-feature-num">{f.n}</div>
@@ -178,13 +168,13 @@ function LandingPage({ onEnter }) {
       </section>
       <section className="lp-cta">
         <div className="lp-cta-label">Prendre de l'avance</div>
-        <h2 className="lp-cta-title">Le bon moment, c'est<br /><em>avant</em> que la réforme s'applique.</h2>
-        <p className="lp-cta-sub">Accédez à votre espace pour auditer la première base fournisseurs de vos clients.</p>
-        <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
+        <h2 className="lp-cta-title">Le bon moment, c'est<br /><em>avant</em> que la reforme s'applique.</h2>
+        <p className="lp-cta-sub">Accedez a votre espace pour auditer la premiere base fournisseurs de vos clients.</p>
+        <button className="lp-btn-primary" onClick={onEnter}>Acceder a l'espace client</button>
       </section>
       <footer className="lp-footer">
-        <div className="lp-footer-logo"><LogoDR size={24} />DataRemédiation</div>
-        <div className="lp-footer-text">© 2026 · Conçu pour les cabinets comptables</div>
+        <div className="lp-footer-logo"><LogoDR size={24} />DataRemediation</div>
+        <div className="lp-footer-text">2026 · Concu pour les cabinets comptables</div>
       </footer>
     </div>
   );
@@ -247,8 +237,8 @@ export default function App() {
     setUser(null); setFiles([]); setScreen('landing');
   };
 
-  if (screen === 'loading')  return <Shell><LoadingScreen /></Shell>;
-  if (screen === 'landing')  return <LandingPage onEnter={() => setScreen('login')} />;
+  if (screen === 'loading') return <Shell><LoadingScreen /></Shell>;
+  if (screen === 'landing') return <LandingPage onEnter={() => setScreen('login')} />;
 
   return (
     <Shell>
@@ -314,7 +304,7 @@ function LoadingScreen() {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{textAlign:'center'}}>
         <LogoDR size={48} />
-        <div style={{fontSize:12,color:P.muted,marginTop:12}}>Restauration de la session…</div>
+        <div style={{fontSize:12,color:P.muted,marginTop:12}}>Chargement…</div>
       </div>
     </div>
   );
@@ -347,16 +337,14 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
       <div style={{position:'fixed',inset:0,backgroundImage:`linear-gradient(${P.border} 1px,transparent 1px),linear-gradient(90deg,${P.border} 1px,transparent 1px)`,backgroundSize:'60px 60px',opacity:.4,pointerEvents:'none'}} />
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${P.accent}60,transparent)`,pointerEvents:'none'}} />
-        <button onClick={onBack} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,marginBottom:20,display:'flex',alignItems:'center',gap:4,fontFamily:"'JetBrains Mono',monospace"}}>
-          ← Retour à l'accueil
+        <button onClick={onBack} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,marginBottom:20,display:'flex',alignItems:'center',gap:4}}>
+          Retour a l'accueil
         </button>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{display:'flex',justifyContent:'center',marginBottom:12}}>
-            <LogoDR size={52} />
-          </div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:12}}><LogoDR size={52} /></div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemediation</div>
           <div style={{fontSize:10,color:P.muted,letterSpacing:'.12em',textTransform:'uppercase',marginTop:4}}>
-            {mode==='login'?'Espace Client Sécurisé':'Créer un compte'}
+            {mode==='login'?'Espace Client Securise':'Creer un compte'}
           </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -374,7 +362,7 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
               <div style={{fontSize:10,color:P.muted,letterSpacing:'.06em',textTransform:'uppercase'}}>Mot de passe</div>
               {mode==='login' && (
-                <button onClick={onForgot} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,textDecoration:'underline'}}>Mot de passe oublié ?</button>
+                <button onClick={onForgot} style={{background:'none',border:'none',color:P.muted,fontSize:10,cursor:'pointer',padding:0,textDecoration:'underline'}}>Mot de passe oublie ?</button>
               )}
             </div>
             <input className="field" type="password" placeholder="••••••••" value={form.password} onChange={e=>f('password',e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
@@ -385,21 +373,16 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
               <input className="field" type="password" placeholder="••••••••" value={form.confirm} onChange={e=>f('confirm',e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
             </div>
           )}
-          {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>⚠ {err}</div>}
+          {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>! {err}</div>}
           <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
-            {loading ? <span className="spin">⟳</span> : mode==='login' ? '→ Connexion' : '→ Créer le compte'}
+            {loading ? <span className="spin">...</span> : mode==='login' ? 'Connexion' : 'Creer le compte'}
           </button>
           <div style={{textAlign:'center',fontSize:11,color:P.muted,marginTop:4}}>
-            {mode==='login'?'Pas encore de compte ?':'Déjà inscrit ?'}{' '}
+            {mode==='login'?'Pas encore de compte ?':'Deja inscrit ?'}{' '}
             <button onClick={onSwitch} style={{background:'none',border:'none',color:P.accent,fontSize:11,cursor:'pointer',padding:0}}>
-              {mode==='login'?'S\'inscrire':'Se connecter'}
+              {mode==='login'?"S'inscrire":'Se connecter'}
             </button>
           </div>
-        </div>
-        <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:24}}>
-          {['🔐 JWT','🔒 AES-256','🛡️ RGPD'].map(b=>(
-            <div key={b} style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:4,padding:'3px 8px',fontSize:9,color:P.dim,letterSpacing:'.06em'}}>{b}</div>
-          ))}
         </div>
       </div>
     </div>
@@ -411,37 +394,32 @@ function ForgotPasswordScreen({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState('');
-
   const submit = async () => {
     if (!email) return setErr('Email requis');
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email }),
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }),
       });
       if (!res.ok) throw new Error('Erreur serveur');
       setSent(true);
     } catch(e) { setErr(e.message); }
     setLoading(false);
   };
-
   return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontSize:36,marginBottom:12}}>🔑</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Mot de passe oublié</div>
-          <div style={{fontSize:11,color:P.muted,marginTop:6}}>Entrez votre email pour recevoir un lien de réinitialisation</div>
+          <div style={{fontSize:36,marginBottom:12}}>*</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Mot de passe oublie</div>
         </div>
         {sent ? (
           <div style={{textAlign:'center'}}>
             <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px',marginBottom:20}}>
-              <div style={{fontSize:24,marginBottom:8}}>✉️</div>
-              <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>Email envoyé !</div>
-              <div style={{fontSize:11,color:P.muted}}>Vérifiez votre boîte mail et cliquez sur le lien.</div>
+              <div style={{color:P.accent,fontWeight:600}}>Email envoye !</div>
+              <div style={{fontSize:11,color:P.muted,marginTop:4}}>Verifiez votre boite mail.</div>
             </div>
-            <button className="btn-ghost" onClick={onBack} style={{width:'100%'}}>← Retour à la connexion</button>
+            <button className="btn-ghost" onClick={onBack} style={{width:'100%'}}>Retour a la connexion</button>
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -449,11 +427,11 @@ function ForgotPasswordScreen({ onBack }) {
               <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Email</div>
               <input className="field" type="email" placeholder="vous@entreprise.fr" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
             </div>
-            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>⚠ {err}</div>}
+            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>! {err}</div>}
             <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
-              {loading ? <span className="spin">⟳</span> : '→ Envoyer le lien'}
+              {loading ? '...' : 'Envoyer le lien'}
             </button>
-            <button className="btn-ghost" onClick={onBack} style={{textAlign:'center'}}>← Retour</button>
+            <button className="btn-ghost" onClick={onBack} style={{textAlign:'center'}}>Retour</button>
           </div>
         )}
       </div>
@@ -468,15 +446,13 @@ function ResetPasswordScreen({ onSuccess }) {
   const [err, setErr] = useState('');
   const [done, setDone] = useState(false);
   const token = new URLSearchParams(window.location.search).get('token');
-
   const submit = async () => {
-    if (password.length < 8) return setErr('Mot de passe trop court (8 caractères min)');
+    if (password.length < 8) return setErr('Mot de passe trop court (8 caracteres min)');
     if (password !== confirm) return setErr('Les mots de passe ne correspondent pas');
     setLoading(true); setErr('');
     try {
       const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ token, password }),
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur serveur');
@@ -485,35 +461,26 @@ function ResetPasswordScreen({ onSuccess }) {
     } catch(e) { setErr(e.message); }
     setLoading(false);
   };
-
   return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontSize:36,marginBottom:12}}>🔒</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Nouveau mot de passe</div>
         </div>
         {done ? (
           <div style={{textAlign:'center'}}>
             <div style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:8,padding:'20px'}}>
-              <div style={{fontSize:24,marginBottom:8}}>✅</div>
-              <div style={{color:P.accent,fontWeight:600}}>Mot de passe mis à jour !</div>
+              <div style={{color:P.accent,fontWeight:600}}>Mot de passe mis a jour !</div>
               <div style={{fontSize:11,color:P.muted,marginTop:4}}>Redirection en cours…</div>
             </div>
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            <div>
-              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Nouveau mot de passe</div>
-              <input className="field" type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} />
-            </div>
-            <div>
-              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Confirmer</div>
-              <input className="field" type="password" placeholder="••••••••" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
-            </div>
-            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>⚠ {err}</div>}
-            <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
-              {loading ? <span className="spin">⟳</span> : '→ Réinitialiser'}
+            <input className="field" type="password" placeholder="Nouveau mot de passe" value={password} onChange={e=>setPassword(e.target.value)} />
+            <input className="field" type="password" placeholder="Confirmer" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
+            {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>! {err}</div>}
+            <button className="btn-primary" onClick={submit} disabled={loading}>
+              {loading ? '...' : 'Reinitialiser'}
             </button>
           </div>
         )}
@@ -529,9 +496,9 @@ function AbonnementsPanel({ user, onClose }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Abonnements Suivi Mensuel</div>
-            <div style={{fontSize:11,color:P.muted,marginTop:4}}>Contrôle continu · Résiliable à tout moment · TVA 20% en sus</div>
+            <div style={{fontSize:11,color:P.muted,marginTop:4}}>Controle continu · Resiliable a tout moment · TVA 20% en sus</div>
           </div>
-          <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>✕ Fermer</button>
+          <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>x Fermer</button>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginTop:24}}>
           {ABONNEMENTS.map((a,i)=>(
@@ -546,19 +513,16 @@ function AbonnementsPanel({ user, onClose }) {
               <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
                 {a.features.map((feat,j)=>(
                   <div key={j} style={{display:'flex',alignItems:'center',gap:6,fontSize:10,color:P.chrome}}>
-                    <span style={{color:a.color,fontSize:12}}>✓</span>{feat}
+                    <span style={{color:a.color,fontSize:12}}>+</span>{feat}
                   </div>
                 ))}
               </div>
               <button onClick={()=>{window.location.href=`${a.link}?prefilled_email=${encodeURIComponent(user?.email||'')}`;}}
                 style={{width:'100%',background:a.color,color:'#000',fontWeight:700,padding:'10px',borderRadius:'6px',fontSize:'11px',letterSpacing:'.06em',textTransform:'uppercase',border:'none',cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>
-                → S'abonner
+                S'abonner
               </button>
             </div>
           ))}
-        </div>
-        <div style={{marginTop:20,fontSize:10,color:P.dim,textAlign:'center'}}>
-          🔐 Paiement sécurisé Stripe · Résiliation possible à tout moment · Facture PDF automatique
         </div>
       </div>
     </div>
@@ -576,31 +540,28 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
       <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:8}}>
         <div>
           <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>Abonnement {abonnement}</div>
-          <div style={{color,fontWeight:700}}>{abonnement_fournisseurs_restants} / {abonnement_quota} fournisseurs restants</div>
+          <div style={{color,fontWeight:700}}>{abonnement_fournisseurs_restants} / {abonnement_quota} fournisseurs</div>
           {resetDate && <div style={{color:P.dim,fontSize:9}}>Reset le {resetDate}</div>}
         </div>
-        <div style={{width:6,height:6,borderRadius:'50%',background:color}} />
       </div>
     );
   }
   if (nbCredits > 0) {
     return (
       <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
-        <span style={{color:P.accent,fontWeight:700}}>💳 {nbCredits} crédit{nbCredits>1?'s':''}</span>
-        <span style={{color:P.muted}}>disponible{nbCredits>1?'s':''}</span>
+        <span style={{color:P.accent,fontWeight:700}}>{nbCredits} credit{nbCredits>1?'s':''}</span>
       </div>
     );
   }
   return (
     <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
-      ⚠ Aucun crédit — S'abonner
+      ! Aucun credit
     </button>
   );
 }
 
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
-  const [showAbonnements,   setShowAbonnements]   = useState(false);
-  const [showRectification, setShowRectification] = useState(false);
+  const [showAbonnements, setShowAbonnements] = useState(false);
   const [credits, setCredits] = useState(null);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
@@ -617,15 +578,13 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-      {showAbonnements   && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
-      {showRectification && <RectificationPanel onClose={()=>setShowRectification(false)} />}
+      {showAbonnements && <AbonnementsPanel user={user} onClose={()=>setShowAbonnements(false)} />}
 
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          {/* LOGO */}
           <LogoDR size={36} />
           <div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemédiation</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemediation</div>
             <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>
               Espace client · {user.company}
               {isAdmin && <span style={{marginLeft:8,color:P.accent}}>· ADMIN</span>}
@@ -634,25 +593,32 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           {!isAdmin && <CreditsWidget credits={credits} onOpenAbonnements={()=>setShowAbonnements(true)} />}
-          <button disabled style={{background:`${P.dim}`,border:`1px solid ${P.border}`,color:P.muted,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'not-allowed',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase',opacity:0.5}}>
-  ⚡ Rectification — Bientôt disponible
-</button>
+          {/* Bouton rectification grise - en developpement */}
+          <div title="Fonctionnalite en cours de developpement" style={{
+            background:P.surface, border:`1px solid ${P.border}`, color:P.muted,
+            padding:'6px 14px', borderRadius:6, fontSize:10, fontWeight:700,
+            fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em',
+            textTransform:'uppercase', opacity:0.4, cursor:'not-allowed',
+            userSelect:'none',
+          }}>
+            Rectification — Bientot disponible
+          </div>
           <button onClick={()=>setShowAbonnements(true)} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
-            📅 Abonnements
+            Abonnements
           </button>
           <div className="glow" style={{width:6,height:6,borderRadius:'50%',background:P.accent}} />
           <div style={{fontSize:10,color:P.muted,padding:'4px 10px',background:P.card,border:`1px solid ${P.border}`,borderRadius:6}}>{user.email}</div>
-          <button className="btn-ghost" onClick={onLogout} style={{fontSize:10,padding:'6px 12px'}}>Déconnexion ↗</button>
+          <button className="btn-ghost" onClick={onLogout} style={{fontSize:10,padding:'6px 12px'}}>Deconnexion</button>
         </div>
       </header>
 
       <div style={{flex:1,padding:'28px',maxWidth:1100,margin:'0 auto',width:'100%'}}>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}} className="fadeUp">
           {[
-            {label:'Fichiers',      value:stats.total,      color:P.blue,   icon:'◈'},
-            {label:'Terminés',      value:stats.done,       color:P.accent, icon:'✓'},
-            {label:'En traitement', value:stats.processing, color:P.warn,   icon:'◌'},
-            {label:'Erreurs',       value:stats.error,      color:P.danger, icon:'✗'},
+            {label:'Fichiers',      value:stats.total,      color:P.blue,   icon:'='},
+            {label:'Termines',      value:stats.done,       color:P.accent, icon:'+'},
+            {label:'En traitement', value:stats.processing, color:P.warn,   icon:'~'},
+            {label:'Erreurs',       value:stats.error,      color:P.danger, icon:'!'},
           ].map((s,i)=>(
             <div key={i} className="card" style={{padding:'16px 18px',borderColor:s.color+'20'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
@@ -769,17 +735,25 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
     try {
       await uploadFile(file, setProgress, nbFournisseurs);
       await onDone();
-    } catch(e) { setError(e.message); setUploading(false); }
+    } catch(e) {
+      // Si token expire -> deconnexion automatique
+      if (e.message.toLowerCase().includes('expir') || e.message.toLowerCase().includes('reconnect') || e.message.toLowerCase().includes('session')) {
+        window.dispatchEvent(new Event('auth:logout'));
+      } else {
+        setError(e.message);
+      }
+      setUploading(false);
+    }
   };
 
   return (
     <div className="fadeUp card" style={{padding:24,marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Importer un fichier</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Lancer l'audit de conformite</div>
           {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>MODE DEMO</span>}
         </div>
-        <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>x Annuler</button>
+        <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>Annuler</button>
       </div>
       <div
         className={dragging?'drop-active':''}
@@ -792,31 +766,31 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
         <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls,.pdf" onChange={e=>{if(e.target.files[0])handle(e.target.files[0])}} style={{display:'none'}} />
         {file ? (
           <>
-            <div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'📄':'📊'}</div>
+            <div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'[PDF]':'[XLS]'}</div>
             <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
             <div style={{fontSize:11,color:P.muted}}>
               {fmtSize(file.size)}
-              {detecting?' · Analyse en cours…':nbFournisseurs>0?` · ${nbFournisseurs} fournisseurs detectes`:''}
+              {detecting?' · Detection en cours…':nbFournisseurs>0?` · ${nbFournisseurs} fournisseurs detectes`:''}
             </div>
           </>
         ) : (
           <>
             <div style={{fontSize:36,marginBottom:10,color:P.dim}}>+</div>
-            <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-deposer ou cliquer</div>
+            <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-deposer ou cliquer pour selectionner</div>
             <div style={{fontSize:11,color:P.muted}}>CSV · XLSX · XLS · PDF — max {MAX_SIZE_MB} Mo</div>
           </>
         )}
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:12}}>
-        {[['🔒','Chiffrement TLS en transit'],['🗑️','Suppression auto 48h'],['🔏','Pseudo avant IA'],['🌐','Backend securise — cle cachee']].map(([i,l],k)=>(
+        {[['*','Chiffrement TLS en transit'],['*','Suppression auto 48h'],['*','Pseudonymisation avant IA'],['*','Backend securise']].map(([i,l],k)=>(
           <div key={k} style={{display:'flex',alignItems:'center',gap:6,background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',fontSize:10,color:P.muted}}><span style={{fontSize:13}}>{i}</span>{l}</div>
         ))}
       </div>
-      {errs.length>0 && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12}}>{errs.map((e,i)=><div key={i} style={{fontSize:11,color:P.danger}}>x {e}</div>)}</div>}
-      {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12,fontSize:11,color:P.danger}}>x {error}</div>}
+      {errs.length>0 && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12}}>{errs.map((e,i)=><div key={i} style={{fontSize:11,color:P.danger}}>! {e}</div>)}</div>}
+      {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12,fontSize:11,color:P.danger}}>! {error}</div>}
       {uploading && (
         <div style={{marginTop:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:P.muted,marginBottom:5}}><span>Upload securise…</span><span>{progress}%</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:P.muted,marginBottom:5}}><span>Analyse en cours…</span><span>{progress}%</span></div>
           <div style={{height:3,background:P.border,borderRadius:2,overflow:'hidden'}}>
             <div style={{height:'100%',width:`${progress}%`,background:`linear-gradient(90deg,${P.accent},${P.blue})`,transition:'width .15s'}} />
           </div>
@@ -826,10 +800,10 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
         <div style={{marginTop:16}}>
           {canUpload ? (
             <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-              <span style={{fontSize:18}}>{isAdmin?'🔑':'✅'}</span>
+              <span style={{fontSize:18}}>{isAdmin?'*':'+'}</span>
               <div>
                 <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>
-                  {isAdmin?'Acces demo — paiement bypassed':hasCredits?'Credit disponible — pret a analyser':'Paiement confirme'}
+                  {isAdmin?'Acces demo — paiement bypasse':hasCredits?'Credit disponible — pret a analyser':'Paiement confirme'}
                 </div>
                 <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
               </div>
@@ -837,7 +811,7 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
           ) : (
             <>
               <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
-                Etape 1 — Payer pour activer le traitement
+                Payer pour activer le traitement
               </div>
               <PaymentButton userEmail={user?.email} fileName={file.name} nbFournisseurs={nbFournisseurs} />
             </>
@@ -846,17 +820,17 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
       )}
       {file && detecting && (
         <div style={{marginTop:16,textAlign:'center',fontSize:11,color:P.muted}}>
-          <span style={{marginRight:6}}>⟳</span>Analyse du fichier…
+          Detection du fichier…
         </div>
       )}
       <button className="btn-primary" onClick={upload}
         disabled={!file||errs.length>0||uploading||!canUpload||detecting}
         style={{marginTop:10,width:'100%',opacity:(!canUpload&&file&&!detecting)?0.35:1}}>
-        {uploading?'⟳ Upload en cours…':detecting?'⟳ Analyse du fichier…':!canUpload&&file?'🔒 Paiement requis':'Importer et analyser'}
+        {uploading?'Analyse en cours…':detecting?'Detection…':!canUpload&&file?'Paiement requis':'Lancer l\'audit de conformite'}
       </button>
       {!canUpload && file && !detecting && (
         <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
-          Effectuez le paiement ci-dessus pour debloquer l'import
+          Effectuez le paiement ci-dessus pour debloquer l'analyse
         </div>
       )}
     </div>
@@ -868,12 +842,11 @@ function FileRow({ file, isActive, onClick, onDelete }) {
   const ext = '.'+file.original_name.split('.').pop().toLowerCase();
   const extC = {'.csv':'#00e5a0','.xlsx':'#3d8eff','.xls':'#3d8eff','.pdf':'#ff4566'};
   const ttl = file.expires_at ? fmtTTL(new Date(file.expires_at).getTime()) : null;
-
   return (
     <div className="card row-hover" onClick={onClick} style={{padding:'14px 16px',cursor:'pointer',borderColor:isActive?P.accent+'40':P.border,borderLeft:`3px solid ${isActive?P.accent:P.border}`,transition:'all .15s'}}>
       <div style={{display:'flex',alignItems:'center',gap:12}}>
         <div style={{width:36,height:36,borderRadius:8,background:`${extC[ext]||P.muted}15`,border:`1px solid ${extC[ext]||P.muted}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
-          {ext==='.pdf'?'📄':'📊'}
+          {ext==='.pdf'?'[P]':'[X]'}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,color:P.text,fontSize:13,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
@@ -890,11 +863,6 @@ function FileRow({ file, isActive, onClick, onDelete }) {
       {file.status==='analyzing' && (
         <div style={{marginTop:10,height:2,background:P.border,borderRadius:1,overflow:'hidden'}}>
           <div style={{height:'100%',background:`linear-gradient(90deg,${P.accent},${P.blue})`,animation:'progressFill 3s ease-in-out infinite'}} />
-        </div>
-      )}
-      {file.status==='error' && file.error_message && (
-        <div style={{marginTop:8,fontSize:10,color:P.danger,paddingTop:8,borderTop:`1px solid ${P.border}`,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-          x Analyse echouee — cliquez pour voir le rapport
         </div>
       )}
     </div>
@@ -951,8 +919,8 @@ function ReportPanel({ file, onClose, userPlan }) {
   });
 
   const getTag = (statut='') => {
-    if (statut.includes('Conforme')) return {bg:`${P.accent}15`,color:P.accent,border:`${P.accent}30`,icon:'✓',label:'Conforme'};
-    if (statut.includes('corriger')) return {bg:`${P.warn}15`,color:P.warn,border:`${P.warn}30`,icon:'⚠',label:'A corriger'};
+    if (statut.includes('Conforme')) return {bg:`${P.accent}15`,color:P.accent,border:`${P.accent}30`,icon:'+',label:'Conforme'};
+    if (statut.includes('corriger')) return {bg:`${P.warn}15`,color:P.warn,border:`${P.warn}30`,icon:'!',label:'A corriger'};
     return {bg:`${P.danger}15`,color:P.danger,border:`${P.danger}30`,icon:'x',label:'Bloquant'};
   };
 
@@ -965,7 +933,7 @@ function ReportPanel({ file, onClose, userPlan }) {
       <div style={{fontSize:11,color:P.muted,marginBottom:16,padding:'8px 10px',background:P.surface,borderRadius:6,border:`1px solid ${P.border}`}}>
         <div style={{fontWeight:600,color:P.text,marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
         <div>{fmtSize(file.file_size)} · {fmtDate(file.uploaded_at)}</div>
-        {file.completed_at && <div style={{color:P.accent,marginTop:2}}>✓ Termine {fmtDate(file.completed_at)}</div>}
+        {file.completed_at && <div style={{color:P.accent,marginTop:2}}>+ Termine {fmtDate(file.completed_at)}</div>}
       </div>
       {!isDone ? (
         <div style={{textAlign:'center',padding:'32px 0'}}>
@@ -977,9 +945,9 @@ function ReportPanel({ file, onClose, userPlan }) {
             </>
           ) : (
             <>
-              <div style={{fontSize:28,marginBottom:8,color:P.warn}}>◎</div>
+              <div style={{fontSize:28,marginBottom:8,color:P.warn}}>~</div>
               <div style={{color:P.warn,fontSize:12}}>Analyse en cours…</div>
-              <div style={{fontSize:10,color:P.muted,marginTop:4}}>Pseudo · Validation · IA Claude</div>
+              <div style={{fontSize:10,color:P.muted,marginTop:4}}>Pseudonymisation · Validation · IA Claude</div>
             </>
           )}
         </div>
@@ -999,18 +967,17 @@ function ReportPanel({ file, onClose, userPlan }) {
             ))}
           </div>
 
-          {/* Téléchargement PDF uniquement */}
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargement</div>
-            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>x {error}</div>}
+            {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>! {error}</div>}
             <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'",width:'100%'}}>
-              {loading==='pdf'?'⟳':'↓'}
+              {loading==='pdf'?'...':'↓'}
               <div style={{flex:1,textAlign:'left'}}>
                 <div style={{fontWeight:600}}>Rapport PDF complet</div>
                 <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing 2026 · 5 pages · Lien 15 min</div>
               </div>
             </button>
-            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Lien signé JWT · 15 min · Via backend securise</div>
+            <div style={{marginTop:10,fontSize:9,color:P.dim}}>Lien signe JWT · 15 min · Via backend securise</div>
           </div>
 
           {data.rapport && (
@@ -1030,8 +997,8 @@ function ReportPanel({ file, onClose, userPlan }) {
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
                   ['all',      `Tous (${counts.all})`,             P.chrome],
-                  ['conforme', `✓ Conformes (${counts.conforme})`, P.accent],
-                  ['corriger', `⚠ Corriger (${counts.corriger})`,  P.warn],
+                  ['conforme', `+ Conformes (${counts.conforme})`, P.accent],
+                  ['corriger', `! Corriger (${counts.corriger})`,  P.warn],
                   ['bloquant', `x Bloquants (${counts.bloquant})`, P.danger],
                 ].map(([key,label,color])=>(
                   <button key={key} onClick={()=>setFilter(key)} style={{
@@ -1060,16 +1027,16 @@ function ReportPanel({ file, onClose, userPlan }) {
                         </span>
                       </div>
                       <div style={{display:'flex',gap:10,marginBottom:4}}>
-                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'✓':'x'} SIRET/SIREN</span>
-                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'✓':'x'} TVA</span>
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'+':'x'} SIRET/SIREN</span>
+                        <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'+':'x'} TVA</span>
                         {r.siren_coherent===false && <span style={{fontSize:10,color:P.danger}}>x SIREN incoherent</span>}
                       </div>
                       {(r.erreurs||[]).map((e,j)=>(
-                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>x {e}</div>
+                        <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>! {e}</div>
                       ))}
                       {r.suggestion && (
                         <div style={{fontSize:10,color:r.statut?.includes('Conforme')?P.accent:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
-                          → {r.suggestion}
+                          {r.suggestion}
                         </div>
                       )}
                     </div>
@@ -1096,5 +1063,3 @@ function EmptyState({ onUpload }) {
     </div>
   );
 }
-
-    
