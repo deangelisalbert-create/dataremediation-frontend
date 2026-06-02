@@ -1,5 +1,6 @@
 // components/DossiersPanel.jsx
 import { useState, useEffect } from 'react';
+import { getStoredToken } from '../api';
 
 const P = {
   bg:'#06080f', surface:'#0b0e18', card:'#0f1220',
@@ -29,10 +30,7 @@ function scoreLabel(v) {
 }
 
 async function apiFetch(path, method = 'GET', body = null) {
-  // Chercher le token dans toutes les sources possibles
-const token = sessionStorage.getItem('token') || 
-              localStorage.getItem('token') || 
-              localStorage.getItem('dr_refresh') || '';
+  const token = getStoredToken();
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
@@ -226,7 +224,6 @@ export default function DossiersPanel({ onUploadForDossier }) {
 
             return (
               <div key={d.id}>
-                {/* Carte dossier */}
                 <div
                   onClick={() => toggleSelect(d)}
                   style={{
@@ -306,7 +303,7 @@ export default function DossiersPanel({ onUploadForDossier }) {
                   </div>
                 </div>
 
-                {/* Historique audits (expandable) */}
+                {/* Historique audits */}
                 {isSelected && (
                   <div style={{
                     marginLeft:16, marginTop:4, marginBottom:4,
@@ -333,8 +330,7 @@ export default function DossiersPanel({ onUploadForDossier }) {
                             <div key={i} style={{
                               display:'flex', alignItems:'center', gap:12,
                               background:P.card, borderRadius:6, padding:'10px 14px',
-                              border:`1px solid ${P.border}`,
-                              borderLeft:`3px solid ${aC}`,
+                              border:`1px solid ${P.border}`, borderLeft:`3px solid ${aC}`,
                             }}>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:11,fontWeight:600,color:P.text,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{a.original_name}</div>
