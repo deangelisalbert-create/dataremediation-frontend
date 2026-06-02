@@ -238,10 +238,35 @@ export function RectificationPanel({ onClose }) {
               📄 {meta.fichier} · {meta.total_lignes} lignes · {new Date(meta.date_analyse).toLocaleString('fr-FR')}
             </div>
 
-            {/* ── BOUTONS EXPORT ── */}
-            <div style={{display:'flex',gap:10,marginBottom:16}}>
-              <button
-                onClick={exporterExcel}
+           {/* ── BOUTONS EXPORT ── */}
+<div style={{display:'flex',gap:10,marginBottom:16}}>
+  <button
+    onClick={exporterExcel}
+    disabled={exporting}
+    style={{
+      flex:1, padding:'12px', borderRadius:8, border:'none',
+      background: exporting ? P.dim : P.accent,
+      color: exporting ? P.muted : '#000',
+      fontWeight:700, fontSize:12, cursor: exporting ? 'not-allowed' : 'pointer',
+      fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em', textTransform:'uppercase',
+    }}
+  >
+    {exporting ? '⟳ Export en cours…' : '↓ Télécharger Excel corrigé'}
+  </button>
+  <button
+    onClick={exporterPDF}
+    disabled={exporting}
+    style={{
+      flex:1, padding:'12px', borderRadius:8, border:'none',
+      background: exporting ? P.dim : P.blue,
+      color: exporting ? P.muted : '#fff',
+      fontWeight:700, fontSize:12, cursor: exporting ? 'not-allowed' : 'pointer',
+      fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em', textTransform:'uppercase',
+    }}
+  >
+    {exporting ? '⟳ Export en cours…' : '↓ Rapport PDF Conformité'}
+  </button>
+</div>
                 disabled={exporting}
                 style={{
                   flex:1, padding:'12px', borderRadius:8, border:'none',
