@@ -75,6 +75,14 @@ async function tryRefresh() {
   }
 }
 
+// Ensure valid token before XHR calls
+async function ensureValidToken() {
+  if (getAccessToken()) return getAccessToken();
+  const refreshed = await tryRefresh();
+  if (refreshed) return getAccessToken();
+  return null;
+}
+
 // ── Auth ──────────────────────────────────────────────────
 export async function register(company, email, password) {
   const data = await request('POST', '/api/auth/register', { company, email, password });
@@ -116,20 +124,20 @@ export async function listFiles() {
   return data.files;
 }
 
-// ── Upload avec header X-Nb-Fournisseurs ──────────────────
+// ── Upload avec refresh automatique ──────────────────────
 export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
+  // Refresh le token avant l'upload si necessaire
+  const token = await ensureValidToken();
+
   const formData = new FormData();
   formData.append('file', file);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE_URL}/api/audit/upload`);
-    xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
 
-    // Envoyer le nombre de fournisseurs détectés
-    if (nbFournisseurs > 0) {
-      xhr.setRequestHeader('X-Nb-Fournisseurs', String(nbFournisseurs));
-    }
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    if (nbFournisseurs > 0) xhr.setRequestHeader('X-Nb-Fournisseurs', String(nbFournisseurs));
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -139,14 +147,24 @@ export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch(e) { reject(new Error('Reponse invalide du serveur')); }
+      } else if (xhr.status === 401) {
+        // Token expire meme apres refresh -> reconnexion
+        clearTokens();
+        window.dispatchEvent(new Event('auth:logout'));
+        reject(new Error('Session expiree. Reconnectez-vous.'));
       } else {
-        const err = JSON.parse(xhr.responseText || '{}');
-        reject(new Error(err.error || `Erreur ${xhr.status}`));
+        try {
+          const err = JSON.parse(xhr.responseText || '{}');
+          reject(new Error(err.error || `Erreur ${xhr.status}`));
+        } catch {
+          reject(new Error(`Erreur ${xhr.status}`));
+        }
       }
     };
 
-    xhr.onerror = () => reject(new Error('Erreur réseau lors de l\'upload'));
+    xhr.onerror = () => reject(new Error('Erreur reseau lors de l\'upload'));
     xhr.send(formData);
   });
 }
@@ -159,7 +177,7 @@ export async function deleteFile(fileId) {
   return request('DELETE', `/api/audit/files/${fileId}`);
 }
 
-// ── Crédits et abonnement ─────────────────────────────────
+// ── Credits et abonnement ─────────────────────────────────
 export async function getCredits() {
   return request('GET', '/api/audit/credits');
 }
@@ -172,15 +190,17 @@ export async function getDownloadLink(fileId, type) {
 export function buildDownloadUrl(downloadUrl) {
   return `${BASE_URL}${downloadUrl}`;
 }
+
 // ── Rectification ─────────────────────────────────────────
 export async function rectifierFichier(file, onProgress) {
+  const token = await ensureValidToken();
   const formData = new FormData();
   formData.append('fichier', file);
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${BASE_URL}/api/rectification/analyser`);
-    xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -190,14 +210,23 @@ export async function rectifierFichier(file, onProgress) {
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch(e) { reject(new Error('Reponse invalide du serveur')); }
+      } else if (xhr.status === 401) {
+        clearTokens();
+        window.dispatchEvent(new Event('auth:logout'));
+        reject(new Error('Session expiree. Reconnectez-vous.'));
       } else {
-        const err = JSON.parse(xhr.responseText || '{}');
-        reject(new Error(err.error || `Erreur ${xhr.status}`));
+        try {
+          const err = JSON.parse(xhr.responseText || '{}');
+          reject(new Error(err.error || `Erreur ${xhr.status}`));
+        } catch {
+          reject(new Error(`Erreur ${xhr.status}`));
+        }
       }
     };
 
-    xhr.onerror = () => reject(new Error('Erreur réseau'));
+    xhr.onerror = () => reject(new Error('Erreur reseau'));
     xhr.send(formData);
   });
 }
