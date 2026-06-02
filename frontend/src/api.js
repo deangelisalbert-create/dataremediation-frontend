@@ -7,6 +7,11 @@ let _refreshToken = null;
 function getAccessToken()  { return _accessToken; }
 function getRefreshToken() { return localStorage.getItem('dr_refresh') || _refreshToken; }
 
+// Expose le token pour les composants externes
+export function getStoredToken() {
+  return _accessToken || localStorage.getItem('dr_refresh') || '';
+}
+
 function setTokens(access, refresh) {
   _accessToken  = access;
   _refreshToken = refresh;
@@ -43,13 +48,13 @@ async function request(method, path, body = null, isFormData = false) {
       } else {
         clearTokens();
         window.dispatchEvent(new Event('auth:logout'));
-        throw new Error('Session expirée. Veuillez vous reconnecter.');
+        throw new Error('Session expiree. Veuillez vous reconnecter.');
       }
     }
   }
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: 'Erreur réseau' }));
+    const err = await response.json().catch(() => ({ error: 'Erreur reseau' }));
     throw new Error(err.error || `Erreur ${response.status}`);
   }
 
@@ -75,7 +80,6 @@ async function tryRefresh() {
   }
 }
 
-// Ensure valid token before XHR calls
 async function ensureValidToken() {
   if (getAccessToken()) return getAccessToken();
   const refreshed = await tryRefresh();
@@ -125,8 +129,7 @@ export async function listFiles() {
 }
 
 // ── Upload avec refresh automatique ──────────────────────
-export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
-  // Refresh le token avant l'upload si necessaire
+export async function uploadFile(file, onProgress, nbFournisseurs = 0, dossierId = null) {
   const token = await ensureValidToken();
 
   const formData = new FormData();
@@ -138,6 +141,7 @@ export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
 
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     if (nbFournisseurs > 0) xhr.setRequestHeader('X-Nb-Fournisseurs', String(nbFournisseurs));
+    if (dossierId) xhr.setRequestHeader('X-Dossier-Id', String(dossierId));
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -150,7 +154,6 @@ export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
         try { resolve(JSON.parse(xhr.responseText)); }
         catch(e) { reject(new Error('Reponse invalide du serveur')); }
       } else if (xhr.status === 401) {
-        // Token expire meme apres refresh -> reconnexion
         clearTokens();
         window.dispatchEvent(new Event('auth:logout'));
         reject(new Error('Session expiree. Reconnectez-vous.'));
@@ -164,7 +167,7 @@ export async function uploadFile(file, onProgress, nbFournisseurs = 0) {
       }
     };
 
-    xhr.onerror = () => reject(new Error('Erreur reseau lors de l\'upload'));
+    xhr.onerror = () => reject(new Error('Erreur reseau lors du upload'));
     xhr.send(formData);
   });
 }
