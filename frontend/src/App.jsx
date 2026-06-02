@@ -634,9 +634,9 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           {!isAdmin && <CreditsWidget credits={credits} onOpenAbonnements={()=>setShowAbonnements(true)} />}
-          <button onClick={()=>setShowRectification(true)} style={{background:`${P.blue}15`,border:`1px solid ${P.blue}30`,color:P.blue,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
-            ⚡ Rectifier
-          </button>
+          <button disabled style={{background:`${P.dim}`,border:`1px solid ${P.border}`,color:P.muted,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'not-allowed',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase',opacity:0.5}}>
+  ⚡ Rectification — Bientôt disponible
+</button>
           <button onClick={()=>setShowAbonnements(true)} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
             📅 Abonnements
           </button>
