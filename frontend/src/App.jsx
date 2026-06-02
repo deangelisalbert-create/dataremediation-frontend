@@ -62,9 +62,10 @@ function LogoDR({ size = 32 }) {
   return (
     <img
       src="/logo.png"
-      alt="DataRemédiation"
-      style={{ width: size, height: size, objectFit: 'contain' }}
-      onError={e => { e.target.style.display = 'none'; }}
+      alt="DataRemediation"
+      width={size}
+      height={size}
+      style={{ objectFit: 'contain', display: 'block' }}
     />
   );
 }
