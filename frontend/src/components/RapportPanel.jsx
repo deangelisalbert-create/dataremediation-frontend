@@ -433,13 +433,13 @@ function ScoringFournisseurs({ data }) {
             key={c.key}
             onClick={() => setFilter(c.key)}
             style={{
-              padding: "5px 14px", borderRadius: 20, border: "none",
-              cursor: "pointer", fontSize: 12, fontWeight: 600,
-              background: filter === c.key ? c.color : C.bg,
-              color: filter === c.key ? "#000" : c.color,
-              border: `1px solid ${c.color}44`,
-              transition: "all 0.2s",
-            }}
+  padding: "5px 14px", borderRadius: 20,
+  cursor: "pointer", fontSize: 12, fontWeight: 600,
+  background: filter === c.key ? c.color : C.bg,
+  color: filter === c.key ? "#000" : c.color,
+  border: `1px solid ${c.color}44`,
+  transition: "all 0.2s",
+}}
           >
             {c.label}
             {c.key !== "tous" && (
