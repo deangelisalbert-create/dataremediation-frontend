@@ -26,10 +26,36 @@ const P = {
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 const ABONNEMENTS = [
-  { label:'Starter', prix:'249 EUR HT/mois', desc:"Jusqu'a 50 fournisseurs", features:['Controle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
-  { label:'PME BTP', prix:'459 EUR HT/mois', desc:'51 a 200 fournisseurs', features:['Controle SIRET mensuel','Validation TVA','Detection doublons','Rapport PDF','Support prioritaire'], link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff' },
-  { label:'PME Structuree', prix:'890 EUR HT/mois', desc:'201 a 500 fournisseurs', features:['Controle SIRET mensuel','Validation TVA','Detection doublons','Scoring conformite','Rapport PDF avance','Support dedie'], link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340' },
-  { label:'Cabinet Comptable', prix:'1 990 EUR HT/mois', desc:'Portefeuille clients illimite', features:['Multi-clients','Controle SIRET mensuel','Validation TVA','Detection doublons','Tableaux de bord','Rapports PDF white-label','Account manager dedie'], link:'https://buy.stripe.com/28EfZae87grn0664OTfQI08', color:'#ff4566' },
+  {
+    label:'Essentiel',
+    prix:'290 EUR HT/mois',
+    desc:'Jusqu\'a 10 audits/mois · 50 fournisseurs/audit',
+    features:['10 audits par mois','50 fournisseurs par audit','Rapport PDF par audit','Support email'],
+    link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05',
+    color:'#00e5a0',
+    quota_audits: 10,
+    quota_fourn: 50,
+  },
+  {
+    label:'Pro',
+    prix:'499 EUR HT/mois',
+    desc:'Jusqu\'a 30 audits/mois · 200 fournisseurs/audit',
+    features:['30 audits par mois','200 fournisseurs par audit','Rapport PDF','Detection doublons','Support prioritaire'],
+    link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06',
+    color:'#3d8eff',
+    quota_audits: 30,
+    quota_fourn: 200,
+  },
+  {
+    label:'Cabinet',
+    prix:'899 EUR HT/mois',
+    desc:'Audits illimites · 500 fournisseurs/audit',
+    features:['Audits illimites','500 fournisseurs par audit','Rapports PDF','Multi-dossiers clients','Support dedie'],
+    link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07',
+    color:'#ffb340',
+    quota_audits: 9999,
+    quota_fourn: 500,
+  },
 ];
 
 function fmtSize(b){ return b>1048576?`${(b/1048576).toFixed(1)} Mo`:`${(b/1024).toFixed(0)} Ko`; }
