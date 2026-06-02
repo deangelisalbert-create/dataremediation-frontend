@@ -10,6 +10,7 @@ import { PaymentButton } from './components/PaymentButton';
 import { RectificationPanel } from './components/RectificationPanel';
 import RapportPanel from './components/RapportPanel';
 import DossiersPanel from './components/DossiersPanel';
+
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
@@ -27,34 +28,22 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend
 
 const ABONNEMENTS = [
   {
-    label:'Essentiel',
-    prix:'290 EUR HT/mois',
-    desc:'Jusqu\'a 10 audits/mois · 50 fournisseurs/audit',
+    label:'Essentiel', prix:'290 EUR HT/mois',
+    desc:"Jusqu'a 10 audits/mois · 50 fournisseurs/audit",
     features:['10 audits par mois','50 fournisseurs par audit','Rapport PDF par audit','Support email'],
-    link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05',
-    color:'#00e5a0',
-    quota_audits: 10,
-    quota_fourn: 50,
+    link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0',
   },
   {
-    label:'Pro',
-    prix:'499 EUR HT/mois',
-    desc:'Jusqu\'a 30 audits/mois · 200 fournisseurs/audit',
+    label:'Pro', prix:'499 EUR HT/mois',
+    desc:"Jusqu'a 30 audits/mois · 200 fournisseurs/audit",
     features:['30 audits par mois','200 fournisseurs par audit','Rapport PDF','Detection doublons','Support prioritaire'],
-    link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06',
-    color:'#3d8eff',
-    quota_audits: 30,
-    quota_fourn: 200,
+    link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff',
   },
   {
-    label:'Cabinet',
-    prix:'899 EUR HT/mois',
+    label:'Cabinet', prix:'899 EUR HT/mois',
     desc:'Audits illimites · 500 fournisseurs/audit',
     features:['Audits illimites','500 fournisseurs par audit','Rapports PDF','Multi-dossiers clients','Support dedie'],
-    link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07',
-    color:'#ffb340',
-    quota_audits: 9999,
-    quota_fourn: 500,
+    link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340',
   },
 ];
 
@@ -154,7 +143,7 @@ function LandingPage({ onEnter }) {
       <section className="lp-hero">
         <div className="lp-eyebrow">Cabinets comptables · Reforme 2026</div>
         <h1 className="lp-title">Vos clients sont-ils prets<br />pour la <em>facturation electronique</em> ?</h1>
-        <p className="lp-subtitle">Nous aidons les cabinets a auditer et fiabiliser automatiquement les bases fournisseurs de leurs clients — avant que la reforme ne rende chaque erreur bloquante.</p>
+        <p className="lp-subtitle">Nous aidons les cabinets a auditer et fiabiliser automatiquement les bases fournisseurs de leurs clients.</p>
         <div className="lp-urgence">Obligation generalisee des 2026 · Une base fournisseurs non fiabilisee = des factures rejetees</div>
         <div className="lp-actions">
           <button className="lp-btn-primary" onClick={onEnter}>Acceder a l'espace client</button>
@@ -436,7 +425,6 @@ function ForgotPasswordScreen({ onBack }) {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:`radial-gradient(ellipse at 30% 20%,${P.accent}08 0%,transparent 50%),${P.bg}`}}>
       <div className="fadeUp card" style={{width:'100%',maxWidth:420,padding:'40px 36px'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontSize:36,marginBottom:12}}>*</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:P.text}}>Mot de passe oublie</div>
         </div>
         {sent ? (
@@ -449,14 +437,9 @@ function ForgotPasswordScreen({ onBack }) {
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            <div>
-              <div style={{fontSize:10,color:P.muted,marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Email</div>
-              <input className="field" type="email" placeholder="vous@entreprise.fr" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
-            </div>
+            <input className="field" type="email" placeholder="vous@entreprise.fr" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
             {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>! {err}</div>}
-            <button className="btn-primary" onClick={submit} disabled={loading} style={{marginTop:4}}>
-              {loading ? '...' : 'Envoyer le lien'}
-            </button>
+            <button className="btn-primary" onClick={submit} disabled={loading}>{loading ? '...' : 'Envoyer le lien'}</button>
             <button className="btn-ghost" onClick={onBack} style={{textAlign:'center'}}>Retour</button>
           </div>
         )}
@@ -505,9 +488,7 @@ function ResetPasswordScreen({ onSuccess }) {
             <input className="field" type="password" placeholder="Nouveau mot de passe" value={password} onChange={e=>setPassword(e.target.value)} />
             <input className="field" type="password" placeholder="Confirmer" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()} />
             {err && <div style={{background:`${P.danger}12`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',fontSize:11,color:P.danger}}>! {err}</div>}
-            <button className="btn-primary" onClick={submit} disabled={loading}>
-              {loading ? '...' : 'Reinitialiser'}
-            </button>
+            <button className="btn-primary" onClick={submit} disabled={loading}>{loading ? '...' : 'Reinitialiser'}</button>
           </div>
         )}
       </div>
@@ -521,12 +502,12 @@ function AbonnementsPanel({ user, onClose }) {
       <div className="fadeUp card" style={{width:'100%',maxWidth:900,maxHeight:'90vh',overflowY:'auto',padding:32}} onClick={e=>e.stopPropagation()}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
           <div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Abonnements Suivi Mensuel</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Abonnements</div>
             <div style={{fontSize:11,color:P.muted,marginTop:4}}>Controle continu · Resiliable a tout moment · TVA 20% en sus</div>
           </div>
           <button className="btn-ghost" onClick={onClose} style={{fontSize:11,padding:'6px 14px'}}>x Fermer</button>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginTop:24}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:16,marginTop:24}}>
           {ABONNEMENTS.map((a,i)=>(
             <div key={i} className="card" style={{padding:20,border:`1px solid ${a.color}30`,display:'flex',flexDirection:'column',gap:12}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
@@ -583,23 +564,12 @@ function CreditsWidget({ credits, onOpenAbonnements }) {
     </button>
   );
 }
-  if (nbCredits > 0) {
-    return (
-      <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:6}}>
-        <span style={{color:P.accent,fontWeight:700}}>{nbCredits} credit{nbCredits>1?'s':''}</span>
-      </div>
-    );
-  }
-  return (
-    <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
-      ! Aucun credit
-    </button>
-  );
-}
 
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
   const [showAbonnements, setShowAbonnements] = useState(false);
-  const [credits, setCredits] = useState(null);
+  const [credits,         setCredits]         = useState(null);
+  const [onglet,          setOnglet]          = useState('fichiers');
+  const [dossierUpload,   setDossierUpload]   = useState(null);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
   useEffect(() => {
@@ -611,6 +581,12 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
     done:       files.filter(f=>f.status==='done').length,
     processing: files.filter(f=>['analyzing','importing'].includes(f.status)).length,
     error:      files.filter(f=>f.status==='error').length,
+  };
+
+  const handleUploadForDossier = (dossier) => {
+    setDossierUpload(dossier);
+    setShowUpload(true);
+    setOnglet('fichiers');
   };
 
   return (
@@ -630,13 +606,11 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         </div>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           {!isAdmin && <CreditsWidget credits={credits} onOpenAbonnements={()=>setShowAbonnements(true)} />}
-          {/* Bouton rectification grise - en developpement */}
           <div title="Fonctionnalite en cours de developpement" style={{
             background:P.surface, border:`1px solid ${P.border}`, color:P.muted,
             padding:'6px 14px', borderRadius:6, fontSize:10, fontWeight:700,
             fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em',
-            textTransform:'uppercase', opacity:0.4, cursor:'not-allowed',
-            userSelect:'none',
+            textTransform:'uppercase', opacity:0.4, cursor:'not-allowed', userSelect:'none',
           }}>
             Rectification — Bientot disponible
           </div>
@@ -667,47 +641,77 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
           ))}
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:activeFile?'1fr 400px':'1fr',gap:16}}>
-          <div>
-            {showUpload ? (
-              <UploadZone user={user} isAdmin={isAdmin} credits={credits}
-                onDone={async()=>{setShowUpload(false);await onReload();getCredits().then(setCredits).catch(()=>{});}}
-                onCancel={()=>setShowUpload(false)} />
-            ) : (
-              <>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600}}>Mes fichiers</div>
-                  <button className="btn-primary" onClick={()=>setShowUpload(true)} style={{fontSize:11,padding:'9px 20px'}}>+ Nouveau fichier</button>
-                </div>
-                {files.length===0 ? (
-                  <EmptyState onUpload={()=>setShowUpload(true)} />
-                ) : (
-                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                    {files.map(f=>(
-                      <FileRow key={f.id} file={f}
-                        isActive={activeFile?.id===f.id}
-                        onClick={()=>setActiveFile(activeFile?.id===f.id?null:f)}
-                        onDelete={async()=>{
-                          await deleteFile(f.id).catch(()=>{});
-                          if(activeFile?.id===f.id) setActiveFile(null);
-                          onReload();
-                        }} />
-                    ))}
+        {/* Onglets */}
+        <div style={{display:'flex',gap:0,marginBottom:20,borderBottom:`1px solid ${P.border}`}}>
+          {[
+            { key:'fichiers', label:'Mes fichiers' },
+            { key:'dossiers', label:'Dossiers clients' },
+          ].map(o=>(
+            <button key={o.key} onClick={()=>{setOnglet(o.key);setShowUpload(false);setActiveFile(null);}}
+              style={{
+                background:'transparent', border:'none',
+                borderBottom:`2px solid ${onglet===o.key?P.accent:'transparent'}`,
+                color:onglet===o.key?P.accent:P.muted,
+                padding:'8px 20px', fontSize:12, fontWeight:700,
+                cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+                letterSpacing:'.04em', textTransform:'uppercase',
+                transition:'all .15s', marginBottom:-1,
+              }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Onglet Fichiers */}
+        {onglet === 'fichiers' && (
+          <div style={{display:'grid',gridTemplateColumns:activeFile?'1fr 400px':'1fr',gap:16}}>
+            <div>
+              {showUpload ? (
+                <UploadZone user={user} isAdmin={isAdmin} credits={credits}
+                  dossierPreselect={dossierUpload}
+                  onDone={async()=>{setShowUpload(false);setDossierUpload(null);await onReload();getCredits().then(setCredits).catch(()=>{});}}
+                  onCancel={()=>{setShowUpload(false);setDossierUpload(null);}} />
+              ) : (
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600}}>Mes fichiers</div>
+                    <button className="btn-primary" onClick={()=>setShowUpload(true)} style={{fontSize:11,padding:'9px 20px'}}>+ Nouveau fichier</button>
                   </div>
-                )}
-              </>
+                  {files.length===0 ? (
+                    <EmptyState onUpload={()=>setShowUpload(true)} />
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                      {files.map(f=>(
+                        <FileRow key={f.id} file={f}
+                          isActive={activeFile?.id===f.id}
+                          onClick={()=>setActiveFile(activeFile?.id===f.id?null:f)}
+                          onDelete={async()=>{
+                            await deleteFile(f.id).catch(()=>{});
+                            if(activeFile?.id===f.id) setActiveFile(null);
+                            onReload();
+                          }} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            {activeFile && !showUpload && (
+              <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} userPlan={user?.plan||'basic'} />
             )}
           </div>
-          {activeFile && !showUpload && (
-            <ReportPanel file={activeFile} onClose={()=>setActiveFile(null)} userPlan={user?.plan||'basic'} />
-          )}
-        </div>
+        )}
+
+        {/* Onglet Dossiers */}
+        {onglet === 'dossiers' && (
+          <DossiersPanel onUploadForDossier={handleUploadForDossier} />
+        )}
       </div>
     </div>
   );
 }
 
-function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
+function UploadZone({ onDone, onCancel, user, isAdmin, credits, dossierPreselect }) {
   const [dragging,       setDragging]       = useState(false);
   const [file,           setFile]           = useState(null);
   const [errs,           setErrs]           = useState([]);
@@ -770,11 +774,10 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
     if (!file||!canUpload) return;
     setUploading(true); setError('');
     try {
-      await uploadFile(file, setProgress, nbFournisseurs);
+      await uploadFile(file, setProgress, nbFournisseurs, dossierPreselect?.id);
       await onDone();
     } catch(e) {
-      // Si token expire -> deconnexion automatique
-      if (e.message.toLowerCase().includes('expir') || e.message.toLowerCase().includes('reconnect') || e.message.toLowerCase().includes('session')) {
+      if (e.message.toLowerCase().includes('expir') || e.message.toLowerCase().includes('session')) {
         window.dispatchEvent(new Event('auth:logout'));
       } else {
         setError(e.message);
@@ -785,13 +788,20 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
 
   return (
     <div className="fadeUp card" style={{padding:24,marginBottom:16}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>Lancer l'audit de conformite</div>
-          {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700,letterSpacing:'.07em'}}>MODE DEMO</span>}
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:600}}>
+            {dossierPreselect ? `Audit pour : ${dossierPreselect.nom}` : "Lancer l'audit de conformite"}
+          </div>
+          {isAdmin && <span style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,borderRadius:4,padding:'2px 8px',fontSize:9,color:P.accent,fontWeight:700}}>MODE DEMO</span>}
         </div>
         <button className="btn-ghost" onClick={onCancel} style={{fontSize:11,padding:'5px 12px'}}>Annuler</button>
       </div>
+      {dossierPreselect && (
+        <div style={{background:`${P.blue}10`,border:`1px solid ${P.blue}30`,borderRadius:6,padding:'8px 12px',marginBottom:12,fontSize:10,color:P.blue}}>
+          Dossier : {dossierPreselect.nom} {dossierPreselect.siret ? `· SIRET ${dossierPreselect.siret}` : ''}
+        </div>
+      )}
       <div
         className={dragging?'drop-active':''}
         onClick={()=>inputRef.current?.click()}
@@ -803,7 +813,7 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
         <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls,.pdf" onChange={e=>{if(e.target.files[0])handle(e.target.files[0])}} style={{display:'none'}} />
         {file ? (
           <>
-            <div style={{fontSize:32,marginBottom:8}}>{file.name.endsWith('.pdf')?'[PDF]':'[XLS]'}</div>
+            <div style={{fontSize:32,marginBottom:8}}>📊</div>
             <div style={{color:P.accent,fontWeight:600,marginBottom:4}}>{file.name}</div>
             <div style={{fontSize:11,color:P.muted}}>
               {fmtSize(file.size)}
@@ -813,15 +823,10 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
         ) : (
           <>
             <div style={{fontSize:36,marginBottom:10,color:P.dim}}>+</div>
-            <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-deposer ou cliquer pour selectionner</div>
+            <div style={{color:P.chrome,marginBottom:6,fontWeight:500}}>Glisser-deposer ou cliquer</div>
             <div style={{fontSize:11,color:P.muted}}>CSV · XLSX · XLS · PDF — max {MAX_SIZE_MB} Mo</div>
           </>
         )}
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:12}}>
-        {[['*','Chiffrement TLS en transit'],['*','Suppression auto 48h'],['*','Pseudonymisation avant IA'],['*','Backend securise']].map(([i,l],k)=>(
-          <div key={k} style={{display:'flex',alignItems:'center',gap:6,background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',fontSize:10,color:P.muted}}><span style={{fontSize:13}}>{i}</span>{l}</div>
-        ))}
       </div>
       {errs.length>0 && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12}}>{errs.map((e,i)=><div key={i} style={{fontSize:11,color:P.danger}}>! {e}</div>)}</div>}
       {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'9px 12px',marginTop:12,fontSize:11,color:P.danger}}>! {error}</div>}
@@ -833,43 +838,24 @@ function UploadZone({ onDone, onCancel, user, isAdmin, credits }) {
           </div>
         </div>
       )}
-      {file && errs.length===0 && !uploading && !detecting && (
-        <div style={{marginTop:16}}>
-          {canUpload ? (
-            <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-              <span style={{fontSize:18}}>{isAdmin?'*':'+'}</span>
-              <div>
-                <div style={{fontSize:12,color:'#00e5a0',fontWeight:700}}>
-                  {isAdmin?'Acces demo — paiement bypasse':hasCredits?'Credit disponible — pret a analyser':'Paiement confirme'}
-                </div>
-                <div style={{fontSize:10,color:'#4a5878'}}>Vous pouvez maintenant lancer l'analyse</div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div style={{fontSize:10,color:P.muted,marginBottom:8,textAlign:'center',letterSpacing:'.06em',textTransform:'uppercase'}}>
-                Payer pour activer le traitement
-              </div>
-              <PaymentButton userEmail={user?.email} fileName={file.name} nbFournisseurs={nbFournisseurs} />
-            </>
-          )}
+      {file && errs.length===0 && !uploading && !detecting && canUpload && (
+        <div style={{background:'#00e5a015',border:'1px solid #00e5a040',borderRadius:8,padding:'10px 16px',marginTop:12,display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:16}}>{isAdmin?'*':'+'}</span>
+          <div style={{fontSize:11,color:'#00e5a0',fontWeight:700}}>
+            {isAdmin?'Acces demo':'Pret a analyser'}
+          </div>
         </div>
       )}
-      {file && detecting && (
-        <div style={{marginTop:16,textAlign:'center',fontSize:11,color:P.muted}}>
-          Detection du fichier…
+      {file && errs.length===0 && !uploading && !detecting && !canUpload && (
+        <div style={{marginTop:12}}>
+          <PaymentButton userEmail={user?.email} fileName={file.name} nbFournisseurs={nbFournisseurs} />
         </div>
       )}
       <button className="btn-primary" onClick={upload}
         disabled={!file||errs.length>0||uploading||!canUpload||detecting}
-        style={{marginTop:10,width:'100%',opacity:(!canUpload&&file&&!detecting)?0.35:1}}>
-        {uploading?'Analyse en cours…':detecting?'Detection…':!canUpload&&file?'Paiement requis':'Lancer l\'audit de conformite'}
+        style={{marginTop:12,width:'100%'}}>
+        {uploading?'Analyse en cours…':detecting?'Detection…':!canUpload&&file?'Paiement requis':"Lancer l'audit de conformite"}
       </button>
-      {!canUpload && file && !detecting && (
-        <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:6}}>
-          Effectuez le paiement ci-dessus pour debloquer l'analyse
-        </div>
-      )}
     </div>
   );
 }
@@ -882,8 +868,8 @@ function FileRow({ file, isActive, onClick, onDelete }) {
   return (
     <div className="card row-hover" onClick={onClick} style={{padding:'14px 16px',cursor:'pointer',borderColor:isActive?P.accent+'40':P.border,borderLeft:`3px solid ${isActive?P.accent:P.border}`,transition:'all .15s'}}>
       <div style={{display:'flex',alignItems:'center',gap:12}}>
-        <div style={{width:36,height:36,borderRadius:8,background:`${extC[ext]||P.muted}15`,border:`1px solid ${extC[ext]||P.muted}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
-          {ext==='.pdf'?'[P]':'[X]'}
+        <div style={{width:36,height:36,borderRadius:8,background:`${extC[ext]||P.muted}15`,border:`1px solid ${extC[ext]||P.muted}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
+          {ext==='.pdf'?'📄':'📊'}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:600,color:P.text,fontSize:13,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.original_name}</div>
@@ -906,7 +892,7 @@ function FileRow({ file, isActive, onClick, onDelete }) {
   );
 }
 
-function ReportPanel({ file, onClose, userPlan }) {
+function ReportPanel({ file, onClose }) {
   const [loading, setLoading] = useState('');
   const [error,   setError]   = useState('');
   const [search,  setSearch]  = useState('');
@@ -978,7 +964,6 @@ function ReportPanel({ file, onClose, userPlan }) {
             <>
               <div style={{fontSize:28,marginBottom:8,color:P.danger}}>x</div>
               <div style={{color:P.danger,fontSize:12}}>Analyse echouee</div>
-              <div style={{fontSize:10,color:P.muted,marginTop:8}}>Reessayez en important un nouveau fichier</div>
             </>
           ) : (
             <>
@@ -1003,7 +988,6 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             ))}
           </div>
-
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargement</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>! {error}</div>}
@@ -1011,26 +995,18 @@ function ReportPanel({ file, onClose, userPlan }) {
               {loading==='pdf'?'...':'↓'}
               <div style={{flex:1,textAlign:'left'}}>
                 <div style={{fontWeight:600}}>Rapport PDF complet</div>
-                <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing 2026 · 5 pages · Lien 15 min</div>
+                <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing 2026 · 5 pages</div>
               </div>
             </button>
-            <div style={{marginTop:10,fontSize:9,color:P.dim}}>Lien signe JWT · 15 min · Via backend securise</div>
           </div>
-
-          {data.rapport && (
-            <div style={{marginBottom:16}}>
-              <RapportPanel rapport={data.rapport} />
-            </div>
-          )}
-
+          {data.rapport && <div style={{marginBottom:16}}><RapportPanel rapport={data.rapport} /></div>}
           {results.length>0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
-                Detail par fournisseur
-                <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:8}}>({results.length})</span>
+                Detail par fournisseur <span style={{fontSize:10,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400}}>({results.length})</span>
               </div>
               <input style={{width:'100%',background:P.surface,border:`1px solid ${P.border}`,borderRadius:6,padding:'7px 10px',color:P.text,fontSize:11,fontFamily:"'JetBrains Mono',monospace",marginBottom:8,outline:'none'}}
-                placeholder="Rechercher nom ou alias…" value={search} onChange={e=>setSearch(e.target.value)} />
+                placeholder="Rechercher…" value={search} onChange={e=>setSearch(e.target.value)} />
               <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
                 {[
                   ['all',      `Tous (${counts.all})`,             P.chrome],
@@ -1054,27 +1030,24 @@ function ReportPanel({ file, onClose, userPlan }) {
                   const tag = getTag(r.statut||'');
                   return (
                     <div key={i} style={{background:P.surface,border:`1px solid ${tag.border}`,borderRadius:8,padding:'10px 12px',borderLeft:`3px solid ${tag.color}`}}>
-                      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:6}}>
+                      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:4}}>
                         <div style={{minWidth:0}}>
                           <div style={{fontWeight:600,color:P.text,fontSize:11}}>{r.nom_reel||r.alias}</div>
                           <div style={{fontSize:10,color:P.muted,marginTop:1}}>{r.alias}</div>
                         </div>
-                        <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,letterSpacing:'.07em',textTransform:'uppercase',flexShrink:0}}>
+                        <span style={{background:tag.bg,color:tag.color,border:`1px solid ${tag.border}`,borderRadius:4,padding:'2px 7px',fontSize:9,fontWeight:600,textTransform:'uppercase',flexShrink:0}}>
                           {tag.icon} {tag.label}
                         </span>
                       </div>
-                      <div style={{display:'flex',gap:10,marginBottom:4}}>
-                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'+':'x'} SIRET/SIREN</span>
+                      <div style={{display:'flex',gap:10,marginBottom:2}}>
+                        <span style={{fontSize:10,color:r.siret_ok?P.accent:P.danger}}>{r.siret_ok?'+':'x'} SIRET</span>
                         <span style={{fontSize:10,color:r.tva_ok?P.accent:P.danger}}>{r.tva_ok?'+':'x'} TVA</span>
-                        {r.siren_coherent===false && <span style={{fontSize:10,color:P.danger}}>x SIREN incoherent</span>}
                       </div>
                       {(r.erreurs||[]).map((e,j)=>(
                         <div key={j} style={{fontSize:10,color:P.danger,marginTop:2}}>! {e}</div>
                       ))}
                       {r.suggestion && (
-                        <div style={{fontSize:10,color:r.statut?.includes('Conforme')?P.accent:P.muted,marginTop:4,paddingTop:4,borderTop:`1px solid ${P.border}`,fontStyle:'italic'}}>
-                          {r.suggestion}
-                        </div>
+                        <div style={{fontSize:10,color:P.muted,marginTop:4,fontStyle:'italic'}}>{r.suggestion}</div>
                       )}
                     </div>
                   );
@@ -1091,11 +1064,11 @@ function ReportPanel({ file, onClose, userPlan }) {
 function EmptyState({ onUpload }) {
   return (
     <div className="card fadeUp" style={{padding:'60px 40px',textAlign:'center',borderStyle:'dashed'}}>
-      <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
-        <LogoDR size={52} />
-      </div>
+      <div style={{display:'flex',justifyContent:'center',marginBottom:16}}><LogoDR size={52} /></div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,marginBottom:8}}>Aucun fichier importe</div>
-      <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>Importez vos fichiers fournisseurs pour demarrer<br/>un audit de conformite e-Invoicing 2026.</div>
+      <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>
+        Importez vos fichiers fournisseurs pour demarrer<br/>un audit de conformite e-Invoicing 2026.
+      </div>
       <button className="btn-primary" onClick={onUpload}>+ Importer un premier fichier</button>
     </div>
   );
