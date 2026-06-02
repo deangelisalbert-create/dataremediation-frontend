@@ -29,7 +29,10 @@ function scoreLabel(v) {
 }
 
 async function apiFetch(path, method = 'GET', body = null) {
-  const token = localStorage.getItem('dr_refresh') || '';
+  // Chercher le token dans toutes les sources possibles
+const token = sessionStorage.getItem('token') || 
+              localStorage.getItem('token') || 
+              localStorage.getItem('dr_refresh') || '';
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
