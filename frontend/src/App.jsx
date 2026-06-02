@@ -9,7 +9,7 @@ import {
 import { PaymentButton } from './components/PaymentButton';
 import { RectificationPanel } from './components/RectificationPanel';
 import RapportPanel from './components/RapportPanel';
-
+import DossiersPanel from './components/DossiersPanel';
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
