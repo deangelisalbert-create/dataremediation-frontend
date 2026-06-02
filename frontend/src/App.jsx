@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+    import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
   register, login, logout,
@@ -9,6 +9,7 @@ import {
 import { PaymentButton } from './components/PaymentButton';
 import { RectificationPanel } from './components/RectificationPanel';
 import RapportPanel from './components/RapportPanel';
+
 const MAX_SIZE_MB    = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_EXT    = ['.csv', '.xlsx', '.xls', '.pdf'];
@@ -25,7 +26,7 @@ const P = {
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 const ABONNEMENTS = [
-  { label:'Starter', prix:'249 € HT/mois', desc:'Jusqu\'à 50 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
+  { label:'Starter', prix:'249 € HT/mois', desc:"Jusqu'à 50 fournisseurs", features:['Contrôle SIRET mensuel','Validation TVA','Rapport PDF','Support email'], link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0' },
   { label:'PME BTP', prix:'459 € HT/mois', desc:'51 à 200 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Rapport PDF','Support prioritaire'], link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff' },
   { label:'PME Structurée', prix:'890 € HT/mois', desc:'201 à 500 fournisseurs', features:['Contrôle SIRET mensuel','Validation TVA','Détection doublons','Scoring conformité','Rapport PDF avancé','Support dédié'], link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340' },
   { label:'Cabinet Comptable', prix:'1 990 € HT/mois', desc:'Portefeuille clients illimité', features:['Multi-clients','Contrôle SIRET mensuel','Validation TVA','Détection doublons','Tableaux de bord','Rapports PDF white-label','Account manager dédié'], link:'https://buy.stripe.com/28EfZae87grn0664OTfQI08', color:'#ff4566' },
@@ -56,12 +57,24 @@ const STATUS_CFG = {
   error:     { label:'Erreur',     color:'#ff4566', icon:'✗', pulse:false },
 };
 
-// ── LANDING PAGE ──────────────────────────────────────────────────────────────
+// ── Logo DataRemédiation ──────────────────────────────────
+function LogoDR({ size = 32 }) {
+  return (
+    <img
+      src="/logo.png"
+      alt="DataRemédiation"
+      style={{ width: size, height: size, objectFit: 'contain' }}
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+  );
+}
+
+// ── LANDING PAGE ──────────────────────────────────────────
 function LandingPage({ onEnter }) {
   const landingStyles = `
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
     .lp-nav { position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:24px 48px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(13,15,20,0.9);backdrop-filter:blur(16px); }
-    .lp-logo { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:500;color:#F5F3EE;letter-spacing:0.02em; }
+    .lp-logo { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:500;color:#F5F3EE;letter-spacing:0.02em;display:flex;align-items:center;gap:10px; }
     .lp-logo span { color:#C9A84C; }
     .lp-nav-btn { font-size:0.78rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.3);padding:10px 28px;cursor:pointer;background:transparent;transition:all 0.25s ease;font-family:'DM Sans',sans-serif; }
     .lp-nav-btn:hover { background:#C9A84C;color:#0D0F14;border-color:#C9A84C; }
@@ -99,7 +112,7 @@ function LandingPage({ onEnter }) {
     .lp-cta-title em { font-style:italic;color:#C9A84C; }
     .lp-cta-sub { font-family:'DM Sans',sans-serif;font-size:0.95rem;color:#5A5A65;margin-bottom:44px;font-weight:300; }
     .lp-footer { position:relative;z-index:1;padding:24px 48px;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between; }
-    .lp-footer-logo { font-family:'Playfair Display',serif;font-size:0.9rem;color:#3A3A45; }
+    .lp-footer-logo { font-family:'Playfair Display',serif;font-size:0.9rem;color:#3A3A45;display:flex;align-items:center;gap:8px; }
     .lp-footer-text { font-family:'DM Sans',sans-serif;font-size:0.75rem;color:#2A2A35; }
     @keyframes lpFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
     @media (max-width:768px) {
@@ -115,7 +128,10 @@ function LandingPage({ onEnter }) {
       <style>{landingStyles}</style>
       <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:0,background:'radial-gradient(ellipse 70% 50% at 75% -5%,rgba(201,168,76,0.06) 0%,transparent 55%),radial-gradient(ellipse 40% 30% at -5% 85%,rgba(201,168,76,0.04) 0%,transparent 50%)'}} />
       <nav className="lp-nav">
-        <div className="lp-logo">Data<span>Remédiation</span></div>
+        <div className="lp-logo">
+          <LogoDR size={36} />
+          Data<span>Remédiation</span>
+        </div>
         <button className="lp-nav-btn" onClick={onEnter}>Espace client</button>
       </nav>
       <section className="lp-hero">
@@ -148,7 +164,7 @@ function LandingPage({ onEnter }) {
       <section className="lp-features" id="lp-features">
         {[
           {n:'01',title:'Audit automatique de la base fournisseurs',text:"Importez le fichier fournisseurs de votre client. En quelques minutes, chaque ligne est contrôlée : SIRET actif, TVA valide, cohérence des données, doublons détectés.",gain:'→ Gain : 0 heure de vérification manuelle'},
-          {n:'02',title:'Rapport de conformité prêt à livrer',text:"Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF ou Excel — directement transmissible au client.",gain:'→ Gain : un livrable professionnel en un clic'},
+          {n:'02',title:'Rapport de conformité prêt à livrer',text:"Chaque anomalie est expliquée, classée par niveau de risque (bloquant / à corriger / conforme) et exportée en PDF — directement transmissible au client.",gain:'→ Gain : un livrable professionnel en un clic'},
           {n:'03',title:'Traçabilité complète pour le cabinet',text:"Historique de tous les audits par client, date, et version. Vous gardez la main sur chaque correction validée — pour vos obligations de conseil et votre couverture juridique.",gain:'→ Gain : preuve de diligence horodatée'},
         ].map(f=>(
           <div className="lp-feature" key={f.n}>
@@ -166,14 +182,14 @@ function LandingPage({ onEnter }) {
         <button className="lp-btn-primary" onClick={onEnter}>Accéder à l'espace client</button>
       </section>
       <footer className="lp-footer">
-        <div className="lp-footer-logo">DataRemédiation</div>
+        <div className="lp-footer-logo"><LogoDR size={24} />DataRemédiation</div>
         <div className="lp-footer-text">© 2026 · Conçu pour les cabinets comptables</div>
       </footer>
     </div>
   );
 }
 
-// ── APP ROOT ──────────────────────────────────────────────────────────────────
+// ── APP ROOT ──────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState('loading');
   const [user,   setUser]   = useState(null);
@@ -296,8 +312,8 @@ function LoadingScreen() {
   return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{textAlign:'center'}}>
-        <div className="spin" style={{fontSize:32,marginBottom:12,color:P.accent}}>⟳</div>
-        <div style={{fontSize:12,color:P.muted}}>Restauration de la session…</div>
+        <LogoDR size={48} />
+        <div style={{fontSize:12,color:P.muted,marginTop:12}}>Restauration de la session…</div>
       </div>
     </div>
   );
@@ -334,7 +350,9 @@ function AuthScreen({ mode, onSuccess, onSwitch, onForgot, onBack }) {
           ← Retour à l'accueil
         </button>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:48,height:48,borderRadius:10,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:22,marginBottom:12}}>⚡</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:12}}>
+            <LogoDR size={52} />
+          </div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P.text}}>DataRemédiation</div>
           <div style={{fontSize:10,color:P.muted,letterSpacing:'.12em',textTransform:'uppercase',marginTop:4}}>
             {mode==='login'?'Espace Client Sécurisé':'Créer un compte'}
@@ -603,7 +621,8 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
 
       <header style={{borderBottom:`1px solid ${P.border}`,padding:'12px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',background:P.surface,position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${P.accent},${P.blue})`,fontSize:16}}>⚡</div>
+          {/* LOGO */}
+          <LogoDR size={36} />
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:15,letterSpacing:'-.2px'}}>DataRemédiation</div>
             <div style={{fontSize:9,color:P.muted,letterSpacing:'.1em',textTransform:'uppercase'}}>
@@ -978,26 +997,27 @@ function ReportPanel({ file, onClose, userPlan }) {
               </div>
             ))}
           </div>
+
+          {/* Téléchargement PDF uniquement */}
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
-            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargements securises</div>
+            <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargement</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>x {error}</div>}
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-             
-              <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'"}}>
-                {loading==='pdf'?'⟳':'↓'}
-                <div style={{flex:1,textAlign:'left'}}>
-                  <div style={{fontWeight:600}}>Rapport PDF complet</div>
-                  <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing · Lien 15 min</div>
-                </div>
-              </button>
-            </div>
-            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Liens signes JWT · 15 min · Via backend securise</div>
+            <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'",width:'100%'}}>
+              {loading==='pdf'?'⟳':'↓'}
+              <div style={{flex:1,textAlign:'left'}}>
+                <div style={{fontWeight:600}}>Rapport PDF complet</div>
+                <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing 2026 · 5 pages · Lien 15 min</div>
+              </div>
+            </button>
+            <div style={{marginTop:10,fontSize:9,color:P.dim}}>🔐 Lien signé JWT · 15 min · Via backend securise</div>
           </div>
-         {data.rapport && (
+
+          {data.rapport && (
             <div style={{marginBottom:16}}>
               <RapportPanel rapport={data.rapport} />
             </div>
           )}
+
           {results.length>0 && (
             <div style={{marginBottom:16}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,fontWeight:600,marginBottom:10}}>
@@ -1066,10 +1086,14 @@ function ReportPanel({ file, onClose, userPlan }) {
 function EmptyState({ onUpload }) {
   return (
     <div className="card fadeUp" style={{padding:'60px 40px',textAlign:'center',borderStyle:'dashed'}}>
-      <div style={{fontSize:48,marginBottom:16,color:P.dim}}>⊙</div>
+      <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
+        <LogoDR size={52} />
+      </div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600,marginBottom:8}}>Aucun fichier importe</div>
       <div style={{fontSize:12,color:P.muted,marginBottom:24,lineHeight:1.7}}>Importez vos fichiers fournisseurs pour demarrer<br/>un audit de conformite e-Invoicing 2026.</div>
       <button className="btn-primary" onClick={onUpload}>+ Importer un premier fichier</button>
     </div>
   );
 }
+
+    
