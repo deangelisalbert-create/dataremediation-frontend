@@ -706,7 +706,7 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
        {onglet === 'dossiers' && (
   <DossiersPanel onUploadForDossier={handleUploadForDossier} userEmail={user?.email} />
 )}
-        )}
+        
       </div>
     </div>
   );
