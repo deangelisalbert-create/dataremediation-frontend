@@ -703,8 +703,9 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
         )}
 
         {/* Onglet Dossiers */}
-        {onglet === 'dossiers' && (
-          <DossiersPanel onUploadForDossier={handleUploadForDossier} />
+       {onglet === 'dossiers' && (
+  <DossiersPanel onUploadForDossier={handleUploadForDossier} userEmail={user?.email} />
+)}
         )}
       </div>
     </div>
