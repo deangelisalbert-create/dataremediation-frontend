@@ -12,16 +12,20 @@ const P = {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
+const PLANS_ABONNEMENT = [
+  { key:'essentiel', label:'Essentiel', prix:'290€/mois', audits:10,   fournisseurs:50,  color:'#00e5a0', link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05' },
+  { key:'pro',       label:'Pro',       prix:'499€/mois', audits:30,   fournisseurs:200, color:'#3d8eff', link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06' },
+  { key:'cabinet',   label:'Cabinet',   prix:'899€/mois', audits:9999, fournisseurs:500, color:'#ffb340', link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07' },
+];
+
 function fmtDate(ts) {
   if (!ts) return null;
   return new Date(ts).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
 }
-
 function scoreColor(v) {
   if (v === null || v === undefined) return P.muted;
   return v >= 80 ? P.accent : v >= 50 ? P.warn : P.danger;
 }
-
 function scoreLabel(v) {
   if (v === null || v === undefined) return 'Non analyse';
   if (v >= 80) return 'Conforme';
@@ -46,7 +50,75 @@ async function apiFetch(path, method = 'GET', body = null) {
   return res.json();
 }
 
-export default function DossiersPanel({ onUploadForDossier }) {
+function AbonnementModal({ dossier, userEmail, onClose }) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.75)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:24}} onClick={onClose}>
+      <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:12,padding:32,width:'100%',maxWidth:700}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:P.text}}>
+              Abonnement pour {dossier.nom}
+            </div>
+            <div style={{fontSize:11,color:P.muted,marginTop:4}}>
+              Suivi mensuel de conformite · Resiliable a tout moment · TVA 20% en sus
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'transparent',border:`1px solid ${P.border}`,color:P.muted,padding:'6px 12px',borderRadius:6,fontSize:11,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
+            x Fermer
+          </button>
+        </div>
+
+        <div style={{background:`${P.accent}10`,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'10px 14px',marginBottom:20,fontSize:11,color:P.accent}}>
+          Premier audit realise le {fmtDate(dossier.dernier_audit)} · Score {dossier.dernier_score}% · Abonnement disponible
+        </div>
+
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+          {PLANS_ABONNEMENT.map(plan => (
+            <div key={plan.key} style={{background:P.surface,border:`1px solid ${plan.color}30`,borderRadius:10,padding:18,display:'flex',flexDirection:'column',gap:10}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,fontWeight:700,color:P.text}}>{plan.label}</div>
+                <div style={{fontSize:18,fontWeight:800,color:plan.color,marginTop:4}}>{plan.prix}</div>
+              </div>
+              <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
+                <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{color:plan.color}}>+</span>
+                  {plan.audits === 9999 ? 'Audits illimites' : `${plan.audits} audits/mois`}
+                </div>
+                <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{color:plan.color}}>+</span>
+                  {plan.fournisseurs} fournisseurs/audit
+                </div>
+                <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{color:plan.color}}>+</span>
+                  Rapport PDF mensuel
+                </div>
+              </div>
+              <button
+                onClick={()=>{
+                  const url = `${plan.link}?prefilled_email=${encodeURIComponent(userEmail||'')}&client_reference_id=${dossier.id}`;
+                  window.location.href = url;
+                }}
+                style={{
+                  width:'100%', background:plan.color, color:'#000',
+                  fontWeight:700, padding:'10px', borderRadius:6,
+                  border:'none', cursor:'pointer', fontSize:11,
+                  fontFamily:"'JetBrains Mono',monospace",
+                  letterSpacing:'.06em', textTransform:'uppercase',
+                }}>
+                S'abonner
+              </button>
+            </div>
+          ))}
+        </div>
+        <div style={{fontSize:10,color:P.muted,textAlign:'center',marginTop:12}}>
+          L'abonnement est lie au dossier {dossier.nom} uniquement
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DossiersPanel({ onUploadForDossier, userEmail }) {
   const [dossiers,    setDossiers]    = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [showForm,    setShowForm]    = useState(false);
@@ -56,6 +128,7 @@ export default function DossiersPanel({ onUploadForDossier }) {
   const [error,       setError]       = useState('');
   const [form,        setForm]        = useState({ nom:'', siret:'', contact:'', email:'', notes:'' });
   const [saving,      setSaving]      = useState(false);
+  const [abonnementDossier, setAbonnementDossier] = useState(null);
 
   useEffect(() => { loadDossiers(); }, []);
 
@@ -76,39 +149,27 @@ export default function DossiersPanel({ onUploadForDossier }) {
   };
 
   const toggleSelect = async (d) => {
-    if (selected?.id === d.id) {
-      setSelected(null);
-      setDetailData(null);
-    } else {
-      setSelected(d);
-      await loadDetail(d.id);
-    }
+    if (selected?.id === d.id) { setSelected(null); setDetailData(null); }
+    else { setSelected(d); await loadDetail(d.id); }
   };
 
   const openNew = () => {
     setForm({ nom:'', siret:'', contact:'', email:'', notes:'' });
-    setEditDossier(null);
-    setShowForm(true);
-    setError('');
+    setEditDossier(null); setShowForm(true); setError('');
   };
 
   const openEdit = (d, e) => {
     e.stopPropagation();
     setForm({ nom:d.nom||'', siret:d.siret||'', contact:d.contact||'', email:d.email||'', notes:d.notes||'' });
-    setEditDossier(d);
-    setShowForm(true);
-    setError('');
+    setEditDossier(d); setShowForm(true); setError('');
   };
 
   const saveDossier = async () => {
     if (!form.nom.trim()) return setError('Le nom du dossier est requis.');
     setSaving(true); setError('');
     try {
-      if (editDossier) {
-        await apiFetch(`/api/dossiers/${editDossier.id}`, 'PUT', form);
-      } else {
-        await apiFetch('/api/dossiers', 'POST', form);
-      }
+      if (editDossier) await apiFetch(`/api/dossiers/${editDossier.id}`, 'PUT', form);
+      else             await apiFetch('/api/dossiers', 'POST', form);
       setShowForm(false);
       await loadDossiers();
     } catch(e) { setError(e.message); }
@@ -127,21 +188,25 @@ export default function DossiersPanel({ onUploadForDossier }) {
 
   return (
     <div>
+      {abonnementDossier && (
+        <AbonnementModal
+          dossier={abonnementDossier}
+          userEmail={userEmail}
+          onClose={()=>setAbonnementDossier(null)}
+        />
+      )}
+
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:600}}>
           Dossiers clients
-          <span style={{fontSize:11,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:10}}>
-            ({dossiers.length})
-          </span>
+          <span style={{fontSize:11,color:P.muted,fontFamily:"'JetBrains Mono',monospace",fontWeight:400,marginLeft:10}}>({dossiers.length})</span>
         </div>
         <button onClick={openNew} style={{
           background:P.accent, color:'#000', fontWeight:700, padding:'9px 20px',
           borderRadius:6, border:'none', fontSize:11, cursor:'pointer',
           fontFamily:"'JetBrains Mono',monospace", letterSpacing:'.06em', textTransform:'uppercase',
-        }}>
-          + Nouveau dossier
-        </button>
+        }}>+ Nouveau dossier</button>
       </div>
 
       {error && (
@@ -217,10 +282,12 @@ export default function DossiersPanel({ onUploadForDossier }) {
       ) : (
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {dossiers.map(d => {
-            const isSelected = selected?.id === d.id;
-            const score      = d.dernier_score !== null && d.dernier_score !== undefined ? parseInt(d.dernier_score) : null;
-            const nbAudits   = parseInt(d.nb_audits) || 0;
-            const sColor     = scoreColor(score);
+            const isSelected  = selected?.id === d.id;
+            const score       = d.dernier_score !== null && d.dernier_score !== undefined ? parseInt(d.dernier_score) : null;
+            const nbAudits    = parseInt(d.nb_audits) || 0;
+            const sColor      = scoreColor(score);
+            const aAbonnement = d.abonnement_status === 'active';
+            const peutAbonner = score !== null; // a au moins 1 audit termine
 
             return (
               <div key={d.id}>
@@ -228,10 +295,9 @@ export default function DossiersPanel({ onUploadForDossier }) {
                   onClick={() => toggleSelect(d)}
                   style={{
                     background:P.card,
-                    border:`1px solid ${isSelected ? P.accent+'50' : P.border}`,
-                    borderLeft:`3px solid ${score !== null ? sColor : isSelected ? P.accent : P.border}`,
-                    borderRadius:10, padding:'16px 18px', cursor:'pointer',
-                    transition:'all .15s',
+                    border:`1px solid ${isSelected ? P.accent+'50' : aAbonnement ? P.blue+'40' : P.border}`,
+                    borderLeft:`3px solid ${aAbonnement ? P.blue : score !== null ? sColor : isSelected ? P.accent : P.border}`,
+                    borderRadius:10, padding:'16px 18px', cursor:'pointer', transition:'all .15s',
                   }}
                 >
                   <div style={{display:'flex',alignItems:'center',gap:14}}>
@@ -239,8 +305,7 @@ export default function DossiersPanel({ onUploadForDossier }) {
                     <div style={{
                       width:52, height:52, borderRadius:10, flexShrink:0,
                       background:`${sColor}15`, border:`2px solid ${sColor}40`,
-                      display:'flex', flexDirection:'column',
-                      alignItems:'center', justifyContent:'center',
+                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
                     }}>
                       {score !== null ? (
                         <>
@@ -257,7 +322,14 @@ export default function DossiersPanel({ onUploadForDossier }) {
 
                     {/* Infos */}
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:700,color:P.text,fontSize:14,fontFamily:"'Playfair Display',serif"}}>{d.nom}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{fontWeight:700,color:P.text,fontSize:14,fontFamily:"'Playfair Display',serif"}}>{d.nom}</div>
+                        {aAbonnement && (
+                          <span style={{background:`${P.blue}15`,border:`1px solid ${P.blue}30`,borderRadius:4,padding:'2px 7px',fontSize:9,color:P.blue,fontWeight:700,textTransform:'uppercase'}}>
+                            Abonne · {d.abonnement_plan}
+                          </span>
+                        )}
+                      </div>
                       <div style={{fontSize:10,color:P.muted,marginTop:3,display:'flex',gap:10,flexWrap:'wrap'}}>
                         {d.siret && <span>SIRET {d.siret}</span>}
                         {d.contact && <span>· {d.contact}</span>}
@@ -281,14 +353,43 @@ export default function DossiersPanel({ onUploadForDossier }) {
 
                     {/* Actions */}
                     <div style={{display:'flex',gap:6,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                      {/* Bouton audit */}
                       <button onClick={()=>onUploadForDossier&&onUploadForDossier(d)} style={{
                         background:`${P.accent}15`, border:`1px solid ${P.accent}30`,
                         color:P.accent, padding:'6px 12px', borderRadius:5,
-                        fontSize:10, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
-                        fontWeight:700,
+                        fontSize:10, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace", fontWeight:700,
                       }}>
                         {score !== null ? 'Reanalyser' : 'Lancer audit'}
                       </button>
+
+                      {/* Bouton abonnement — visible seulement si audit fait */}
+                      {!aAbonnement && (
+                        <button
+                          onClick={()=> peutAbonner ? setAbonnementDossier(d) : null}
+                          title={!peutAbonner ? 'Realisez un audit avant de vous abonner' : "S'abonner a ce dossier"}
+                          style={{
+                            background: peutAbonner ? `${P.blue}15` : P.surface,
+                            border:`1px solid ${peutAbonner ? P.blue+'40' : P.border}`,
+                            color: peutAbonner ? P.blue : P.muted,
+                            padding:'6px 12px', borderRadius:5, fontSize:10,
+                            cursor: peutAbonner ? 'pointer' : 'not-allowed',
+                            fontFamily:"'JetBrains Mono',monospace", fontWeight:700,
+                            opacity: peutAbonner ? 1 : 0.4,
+                          }}>
+                          Abonnement
+                        </button>
+                      )}
+
+                      {aAbonnement && (
+                        <div style={{
+                          background:`${P.blue}15`, border:`1px solid ${P.blue}30`,
+                          color:P.blue, padding:'6px 12px', borderRadius:5, fontSize:10,
+                          fontFamily:"'JetBrains Mono',monospace", fontWeight:700,
+                        }}>
+                          {d.abonnement_audits_used||0}/{d.abonnement_quota_audits===9999?'∞':d.abonnement_quota_audits} audits
+                        </div>
+                      )}
+
                       <button onClick={(e)=>openEdit(d,e)} style={{
                         background:'transparent', border:`1px solid ${P.border}`,
                         color:P.muted, padding:'6px 10px', borderRadius:5,
@@ -325,7 +426,7 @@ export default function DossiersPanel({ onUploadForDossier }) {
                       <div style={{display:'flex',flexDirection:'column',gap:6}}>
                         {detailData.audits.map((a,i) => {
                           const aScore = a.taux_conformite !== null ? parseInt(a.taux_conformite) : null;
-                          const aC     = scoreColor(aScore);
+                          const aC = scoreColor(aScore);
                           return (
                             <div key={i} style={{
                               display:'flex', alignItems:'center', gap:12,
@@ -345,15 +446,31 @@ export default function DossiersPanel({ onUploadForDossier }) {
                                 </div>
                               )}
                               <div style={{
-                                fontSize:9, fontWeight:700,
+                                fontSize:9, fontWeight:700, textTransform:'uppercase', flexShrink:0,
                                 color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
-                                textTransform:'uppercase', flexShrink:0,
                               }}>
                                 {a.status==='done' ? 'Termine' : a.status==='error' ? 'Erreur' : 'En cours'}
                               </div>
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {/* Proposer abonnement apres premier audit */}
+                    {detailData?.audits?.length > 0 && !aAbonnement && (
+                      <div style={{marginTop:14,padding:'12px 14px',background:`${P.blue}08`,border:`1px solid ${P.blue}20`,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+                        <div>
+                          <div style={{fontSize:11,color:P.blue,fontWeight:700}}>Suivre ce client chaque mois ?</div>
+                          <div style={{fontSize:10,color:P.muted,marginTop:2}}>Souscrivez un abonnement pour recharger le fichier chaque mois et suivre l'evolution du score.</div>
+                        </div>
+                        <button onClick={()=>setAbonnementDossier(d)} style={{
+                          background:P.blue, color:'#fff', fontWeight:700, padding:'8px 16px',
+                          borderRadius:6, border:'none', fontSize:11, cursor:'pointer',
+                          fontFamily:"'JetBrains Mono',monospace", whiteSpace:'nowrap', flexShrink:0,
+                        }}>
+                          Voir les offres
+                        </button>
                       </div>
                     )}
                   </div>
