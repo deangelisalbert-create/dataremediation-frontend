@@ -445,12 +445,36 @@ export default function DossiersPanel({ onUploadForDossier, userEmail }) {
                                   {aScore}%
                                 </div>
                               )}
-                              <div style={{
-                                fontSize:9, fontWeight:700, textTransform:'uppercase', flexShrink:0,
-                                color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
-                              }}>
-                                {a.status==='done' ? 'Termine' : a.status==='error' ? 'Erreur' : 'En cours'}
-                              </div>
+                          <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+  <div style={{
+    fontSize:9, fontWeight:700, textTransform:'uppercase',
+    color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
+  }}>
+    {a.status==='done' ? 'Termine' : a.status==='error' ? 'Erreur' : 'En cours'}
+  </div>
+  {a.status==='done' && d.email && (
+    <button
+      onClick={async(e)=>{
+        e.stopPropagation();
+        const token = getStoredToken();
+        const res = await fetch(`${API_URL}/api/reports/${a.id}/send`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body: JSON.stringify({ email: d.email, nom_client: d.contact }),
+        });
+        const data = await res.json();
+        alert(res.ok ? `Rapport envoye a ${d.email}` : `Erreur : ${data.error}`);
+      }}
+      style={{
+        background:`${P.blue}15`, border:`1px solid ${P.blue}30`,
+        color:P.blue, padding:'3px 8px', borderRadius:4,
+        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+        fontWeight:700,
+      }}>
+      Envoyer
+    </button>
+  )}
+</div>
                             </div>
                           );
                         })}
