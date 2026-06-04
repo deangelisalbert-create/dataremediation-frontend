@@ -13,9 +13,9 @@ const P = {
 const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend-production.up.railway.app';
 
 const PLANS_ABONNEMENT = [
-  { key:'essentiel', label:'Essentiel', prix:'290€/mois', fournisseurs:50,  color:'#00e5a0', link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05' },
-  { key:'pro',       label:'Pro',       prix:'499€/mois', fournisseurs:200, color:'#3d8eff', link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06' },
-  { key:'cabinet',   label:'Cabinet',   prix:'899€/mois', fournisseurs:500, color:'#ffb340', link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07' },
+  { key:'essentiel', label:'Essentiel', prix:'290€/mois', fournisseurs:50,  color:'#00e5a0', link:'https://buy.stripe.com/fZu3co7JJ5MJbOOftxfQI09' },
+  { key:'pro',       label:'Pro',       prix:'499€/mois', fournisseurs:200, color:'#3d8eff', link:'https://buy.stripe.com/8x24gs3tt0sp1aa6X1fQI0a' },
+  { key:'cabinet',   label:'Cabinet',   prix:'899€/mois', fournisseurs:500, color:'#ffb340', link:'https://buy.stripe.com/6oUdR2d435MJg54dlpfQI0b' },
 ];
 
 function fmtDate(ts) {
