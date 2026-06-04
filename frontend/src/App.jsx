@@ -541,27 +541,24 @@ function AbonnementsPanel({ user, onClose }) {
   );
 }
 
-function CreditsWidget({ credits, onOpenAbonnements }) {
+function CreditsWidget({ credits }) {
   if (!credits) return null;
-  const { abonnement, abonnement_audits_used, abonnement_quota_audits, abonnement_reset_date } = credits;
+  const { abonnement, abonnement_quota_fournisseurs } = credits;
 
   if (abonnement) {
-    const used  = abonnement_audits_used || 0;
-    const quota = abonnement_quota_audits || 0;
-    const pct   = quota > 0 ? Math.round((used / quota) * 100) : 0;
-    const color = pct < 70 ? P.accent : pct < 90 ? P.warn : P.danger;
-    const resetDate = abonnement_reset_date ? new Date(abonnement_reset_date).toLocaleDateString('fr-FR') : '';
     return (
-      <div style={{background:P.card,border:`1px solid ${P.border}`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:10}}>
+      <div style={{background:P.card,border:`1px solid ${P.accent}30`,borderRadius:6,padding:'6px 12px',fontSize:10,display:'flex',alignItems:'center',gap:8}}>
+        <div style={{width:6,height:6,borderRadius:'50%',background:P.accent}} />
         <div>
-          <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>{abonnement}</div>
-          <div style={{color,fontWeight:700}}>{used} / {quota === 9999 ? 'illimite' : quota} audits</div>
-          {resetDate && <div style={{color:P.dim,fontSize:9}}>Reset le {resetDate}</div>}
+          <div style={{color:P.muted,textTransform:'uppercase',letterSpacing:'.06em',fontSize:9}}>Abonnement actif</div>
+          <div style={{color:P.accent,fontWeight:700}}>{abonnement} · {abonnement_quota_fournisseurs} fournisseurs/audit</div>
         </div>
-        <div style={{width:6,height:6,borderRadius:'50%',background:color}} />
       </div>
     );
   }
+
+  return null;
+}
 
   return (
     <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
