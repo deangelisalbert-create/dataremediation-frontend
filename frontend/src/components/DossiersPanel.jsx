@@ -80,10 +80,10 @@ function AbonnementModal({ dossier, userEmail, onClose }) {
                 <div style={{fontSize:18,fontWeight:800,color:plan.color,marginTop:4}}>{plan.prix}</div>
               </div>
               <div style={{flex:1,display:'flex',flexDirection:'column',gap:6}}>
-                <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{color:plan.color}}>+</span>
-                  {plan.audits === 9999 ? 'Audits illimites' : `${plan.audits} audits/mois`}
-                </div>
+               <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
+  <span style={{color:plan.color}}>+</span>
+  Audits illimites
+</div>
                 <div style={{fontSize:10,color:P.chrome,display:'flex',alignItems:'center',gap:6}}>
                   <span style={{color:plan.color}}>+</span>
                   {plan.fournisseurs} fournisseurs/audit
