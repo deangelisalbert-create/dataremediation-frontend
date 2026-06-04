@@ -625,9 +625,9 @@ useEffect(() => {
           }}>
             Rectification — Bientot disponible
           </div>
-          <button onClick={()=>setShowAbonnements(true)} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
-            Abonnements
-          </button>
+         <button onClick={()=>{setOnglet('dossiers'); setShowAbonnements(false);}} style={{background:`${P.accent}15`,border:`1px solid ${P.accent}30`,color:P.accent,padding:'6px 14px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.06em',textTransform:'uppercase'}}>
+  Dossiers clients
+</button>
           <div className="glow" style={{width:6,height:6,borderRadius:'50%',background:P.accent}} />
           <div style={{fontSize:10,color:P.muted,padding:'4px 10px',background:P.card,border:`1px solid ${P.border}`,borderRadius:6}}>{user.email}</div>
           <button className="btn-ghost" onClick={onLogout} style={{fontSize:10,padding:'6px 12px'}}>Deconnexion</button>
