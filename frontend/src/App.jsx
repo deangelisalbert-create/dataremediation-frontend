@@ -560,12 +560,7 @@ function CreditsWidget({ credits }) {
   return null;
 }
 
-  return (
-    <button onClick={onOpenAbonnements} style={{background:`${P.danger}15`,border:`1px solid ${P.danger}30`,color:P.danger,padding:'6px 12px',borderRadius:6,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:"'JetBrains Mono',monospace"}}>
-      ! Aucun abonnement
-    </button>
-  );
-}
+ 
 
 function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload, activeFile, setActiveFile }) {
   const [showAbonnements, setShowAbonnements] = useState(false);
