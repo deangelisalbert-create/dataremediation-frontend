@@ -580,7 +580,13 @@ function Dashboard({ user, files, onLogout, onReload, showUpload, setShowUpload,
   useEffect(() => {
     if (!isAdmin) { getCredits().then(setCredits).catch(()=>{}); }
   }, [isAdmin, showUpload]);
-
+useEffect(() => {
+  const pendingPlan = localStorage.getItem('pending_abonnement_plan');
+  if (pendingPlan) {
+    localStorage.removeItem('pending_abonnement_plan');
+    setOnglet('dossiers');
+  }
+}, []);
   const stats = {
     total:      files.length,
     done:       files.filter(f=>f.status==='done').length,
