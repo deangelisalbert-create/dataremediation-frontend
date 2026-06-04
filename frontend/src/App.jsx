@@ -29,20 +29,20 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://dataremediation-backend
 const ABONNEMENTS = [
   {
     label:'Essentiel', prix:'290 EUR HT/mois',
-    desc:"Jusqu'a 10 audits/mois · 50 fournisseurs/audit",
-    features:['10 audits par mois','50 fournisseurs par audit','Rapport PDF par audit','Support email'],
+    desc:"Jusqu'a 50 fournisseurs par audit",
+    features:['Audits illimites','50 fournisseurs par audit','Rapport PDF par audit','Historique des scores','Support email'],
     link:'https://buy.stripe.com/cNi00c9RRcb74mmeptfQI05', color:'#00e5a0',
   },
   {
     label:'Pro', prix:'499 EUR HT/mois',
-    desc:"Jusqu'a 30 audits/mois · 200 fournisseurs/audit",
-    features:['30 audits par mois','200 fournisseurs par audit','Rapport PDF','Detection doublons','Support prioritaire'],
+    desc:"Jusqu'a 200 fournisseurs par audit",
+    features:['Audits illimites','200 fournisseurs par audit','Rapport PDF','Suivi mensuel conformite','Support prioritaire'],
     link:'https://buy.stripe.com/8x214g2pp7UR3ii1CHfQI06', color:'#3d8eff',
   },
   {
     label:'Cabinet', prix:'899 EUR HT/mois',
-    desc:'Audits illimites · 500 fournisseurs/audit',
-    features:['Audits illimites','500 fournisseurs par audit','Rapports PDF','Multi-dossiers clients','Support dedie'],
+    desc:"Jusqu'a 500 fournisseurs · Multi-dossiers",
+    features:['Audits illimites','500 fournisseurs par audit','Multi-dossiers clients','Rapports PDF illimites','Support dedie'],
     link:'https://buy.stripe.com/3cIaEQfcbcb7dWWchlfQI07', color:'#ffb340',
   },
 ];
