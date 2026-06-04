@@ -207,6 +207,11 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const resetToken = params.get('token');
     if (resetToken) { setScreen('reset-password'); return; }
+    const abonnementOk = params.get('abonnement');
+const abonnementPlan = params.get('plan');
+if (abonnementOk === 'ok' && abonnementPlan) {
+  localStorage.setItem('pending_abonnement_plan', abonnementPlan);
+}
     if (window.location.pathname === '/' && !params.get('paid')) {
       restoreSession().then(u => {
         if (u) { setUser(u); setScreen('dashboard'); }
