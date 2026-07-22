@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+    import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
   register, login, logout,
@@ -902,12 +902,26 @@ function ReportPanel({ file, onClose }) {
   const [search,  setSearch]  = useState('');
   const [filter,  setFilter]  = useState('all');
 
+  // FIX : window.open() doit etre appele de maniere SYNCHRONE dans le
+  // gestionnaire de clic pour eviter le blocage popup du navigateur.
+  // On ouvre un onglet vide immediatement, puis on redirige cet onglet
+  // une fois l'URL de telechargement recuperee depuis l'API.
   const getLink = async (type) => {
     setLoading(type); setError('');
+    const newTab = window.open('', '_blank');
     try {
       const data = await getDownloadLink(file.id, type);
-      window.open(buildDownloadUrl(data.downloadUrl), '_blank');
-    } catch(e) { setError(e.message); }
+      const url = buildDownloadUrl(data.downloadUrl);
+      if (newTab) {
+        newTab.location.href = url;
+      } else {
+        // Popup deja bloque par le navigateur malgre l'ouverture synchrone
+        window.open(url, '_blank');
+      }
+    } catch(e) {
+      setError(e.message);
+      if (newTab) newTab.close();
+    }
     setLoading('');
   };
 
@@ -995,11 +1009,18 @@ function ReportPanel({ file, onClose }) {
           <div style={{background:P.surface,border:`1px solid ${P.border}`,borderRadius:8,padding:14,marginBottom:16}}>
             <div style={{fontSize:10,color:P.muted,textTransform:'uppercase',letterSpacing:'.07em',marginBottom:10}}>Telechargement</div>
             {error && <div style={{background:`${P.danger}10`,border:`1px solid ${P.danger}30`,borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:P.danger}}>! {error}</div>}
-            <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'",width:'100%'}}>
+            <button onClick={()=>getLink('pdf')} disabled={loading==='pdf'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.blue}12`,border:`1px solid ${P.blue}30`,borderRadius:7,padding:'10px 14px',color:P.blue,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'",width:'100%',marginBottom:8}}>
               {loading==='pdf'?'...':'↓'}
               <div style={{flex:1,textAlign:'left'}}>
                 <div style={{fontWeight:600}}>Rapport PDF complet</div>
                 <div style={{fontSize:9,color:'#2a5aaa',marginTop:1}}>Conformite e-Invoicing 2026 · 5 pages</div>
+              </div>
+            </button>
+            <button onClick={()=>getLink('excel')} disabled={loading==='excel'} style={{display:'flex',alignItems:'center',gap:8,background:`${P.warn}12`,border:`1px solid ${P.warn}30`,borderRadius:7,padding:'10px 14px',color:P.warn,fontSize:12,cursor:'pointer',fontFamily:"'JetBrains Mono'",width:'100%'}}>
+              {loading==='excel'?'...':'↓'}
+              <div style={{flex:1,textAlign:'left'}}>
+                <div style={{fontWeight:600}}>Export Excel complet</div>
+                <div style={{fontSize:9,color:'#b8863a',marginTop:1}}>Tous les fournisseurs · 6 onglets</div>
               </div>
             </button>
           </div>
@@ -1077,3 +1098,5 @@ function EmptyState({ onUpload }) {
     </div>
   );
 }
+
+    
