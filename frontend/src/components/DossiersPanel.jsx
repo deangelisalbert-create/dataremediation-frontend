@@ -450,8 +450,42 @@ export default function DossiersPanel({ onUploadForDossier, userEmail }) {
     fontSize:9, fontWeight:700, textTransform:'uppercase',
     color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
   }}>
-    {a.status==='done' ? 'Termine' : a.status==='error' ? 'Erreur' : 'En cours'}
-  </div>
+   {a.status==='done' && (
+    <button
+      onClick={async(e)=>{
+        e.stopPropagation();
+        try {
+          const linkRes = await apiFetch(`/api/reports/${a.id}/link`, 'POST', { type:'pdf' });
+          window.open(`${API_URL}${linkRes.downloadUrl}`, '_blank');
+        } catch(err) { alert(`Erreur : ${err.message}`); }
+      }}
+      style={{
+        background:`${P.accent}15`, border:`1px solid ${P.accent}30`,
+        color:P.accent, padding:'3px 8px', borderRadius:4,
+        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+        fontWeight:700,
+      }}>
+      PDF
+    </button>
+  )}
+  {a.status==='done' && (
+    <button
+      onClick={async(e)=>{
+        e.stopPropagation();
+        try {
+          const linkRes = await apiFetch(`/api/reports/${a.id}/link`, 'POST', { type:'excel' });
+          window.open(`${API_URL}${linkRes.downloadUrl}`, '_blank');
+        } catch(err) { alert(`Erreur : ${err.message}`); }
+      }}
+      style={{
+        background:`${P.warn}15`, border:`1px solid ${P.warn}30`,
+        color:P.warn, padding:'3px 8px', borderRadius:4,
+        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+        fontWeight:700,
+      }}>
+      Excel
+    </button>
+  )}
   {a.status==='done' && d.email && (
     <button
       onClick={async(e)=>{
