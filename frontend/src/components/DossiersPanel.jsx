@@ -1,4 +1,4 @@
-// components/DossiersPanel.jsx
+    // components/DossiersPanel.jsx
 import { useState, useEffect } from 'react';
 import { getStoredToken } from '../api';
 
@@ -184,6 +184,15 @@ export default function DossiersPanel({ onUploadForDossier, userEmail }) {
       if (selected?.id === id) { setSelected(null); setDetailData(null); }
       await loadDossiers();
     } catch(e) { setError(e.message); }
+  };
+
+  const downloadReport = async (fileId, type) => {
+    try {
+      const linkRes = await apiFetch(`/api/reports/${fileId}/link`, 'POST', { type });
+      window.open(`${API_URL}${linkRes.downloadUrl}`, '_blank');
+    } catch(err) {
+      alert(`Erreur : ${err.message}`);
+    }
   };
 
   return (
@@ -445,70 +454,63 @@ export default function DossiersPanel({ onUploadForDossier, userEmail }) {
                                   {aScore}%
                                 </div>
                               )}
-                          <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-  <div style={{
-    fontSize:9, fontWeight:700, textTransform:'uppercase',
-    color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
-  }}>
-   {a.status==='done' && (
-    <button
-      onClick={async(e)=>{
-        e.stopPropagation();
-        try {
-          const linkRes = await apiFetch(`/api/reports/${a.id}/link`, 'POST', { type:'pdf' });
-          window.open(`${API_URL}${linkRes.downloadUrl}`, '_blank');
-        } catch(err) { alert(`Erreur : ${err.message}`); }
-      }}
-      style={{
-        background:`${P.accent}15`, border:`1px solid ${P.accent}30`,
-        color:P.accent, padding:'3px 8px', borderRadius:4,
-        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
-        fontWeight:700,
-      }}>
-      PDF
-    </button>
-  )}
-  {a.status==='done' && (
-    <button
-      onClick={async(e)=>{
-        e.stopPropagation();
-        try {
-          const linkRes = await apiFetch(`/api/reports/${a.id}/link`, 'POST', { type:'excel' });
-          window.open(`${API_URL}${linkRes.downloadUrl}`, '_blank');
-        } catch(err) { alert(`Erreur : ${err.message}`); }
-      }}
-      style={{
-        background:`${P.warn}15`, border:`1px solid ${P.warn}30`,
-        color:P.warn, padding:'3px 8px', borderRadius:4,
-        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
-        fontWeight:700,
-      }}>
-      Excel
-    </button>
-  )}
-  {a.status==='done' && d.email && (
-    <button
-      onClick={async(e)=>{
-        e.stopPropagation();
-        const token = getStoredToken();
-        const res = await fetch(`${API_URL}/api/reports/${a.id}/send`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-          body: JSON.stringify({ email: d.email, nom_client: d.contact }),
-        });
-        const data = await res.json();
-        alert(res.ok ? `Rapport envoye a ${d.email}` : `Erreur : ${data.error}`);
-      }}
-      style={{
-        background:`${P.blue}15`, border:`1px solid ${P.blue}30`,
-        color:P.blue, padding:'3px 8px', borderRadius:4,
-        fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
-        fontWeight:700,
-      }}>
-      Envoyer
-    </button>
-  )}
-</div>
+                              <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                                <div style={{
+                                  fontSize:9, fontWeight:700, textTransform:'uppercase',
+                                  color: a.status==='done' ? P.accent : a.status==='error' ? P.danger : P.warn,
+                                }}>
+                                  {a.status==='done' ? 'Termine' : a.status==='error' ? 'Erreur' : 'En cours'}
+                                </div>
+
+                                {a.status==='done' && (
+                                  <button
+                                    onClick={(e)=>{ e.stopPropagation(); downloadReport(a.id, 'pdf'); }}
+                                    style={{
+                                      background:`${P.accent}15`, border:`1px solid ${P.accent}30`,
+                                      color:P.accent, padding:'3px 8px', borderRadius:4,
+                                      fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+                                      fontWeight:700,
+                                    }}>
+                                    PDF
+                                  </button>
+                                )}
+
+                                {a.status==='done' && (
+                                  <button
+                                    onClick={(e)=>{ e.stopPropagation(); downloadReport(a.id, 'excel'); }}
+                                    style={{
+                                      background:`${P.warn}15`, border:`1px solid ${P.warn}30`,
+                                      color:P.warn, padding:'3px 8px', borderRadius:4,
+                                      fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+                                      fontWeight:700,
+                                    }}>
+                                    Excel
+                                  </button>
+                                )}
+
+                                {a.status==='done' && d.email && (
+                                  <button
+                                    onClick={async(e)=>{
+                                      e.stopPropagation();
+                                      const token = getStoredToken();
+                                      const res = await fetch(`${API_URL}/api/reports/${a.id}/send`, {
+                                        method:'POST',
+                                        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+                                        body: JSON.stringify({ email: d.email, nom_client: d.contact }),
+                                      });
+                                      const data = await res.json();
+                                      alert(res.ok ? `Rapport envoye a ${d.email}` : `Erreur : ${data.error}`);
+                                    }}
+                                    style={{
+                                      background:`${P.blue}15`, border:`1px solid ${P.blue}30`,
+                                      color:P.blue, padding:'3px 8px', borderRadius:4,
+                                      fontSize:8, cursor:'pointer', fontFamily:"'JetBrains Mono',monospace",
+                                      fontWeight:700,
+                                    }}>
+                                    Envoyer
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
@@ -541,3 +543,5 @@ export default function DossiersPanel({ onUploadForDossier, userEmail }) {
     </div>
   );
 }
+
+    
